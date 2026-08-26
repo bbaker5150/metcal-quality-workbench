@@ -73,6 +73,26 @@ npm i --no-save playwright && npx playwright install chromium
 node scripts/smoke-srcdoc.mjs      # 13 checks in a real srcdoc frame
 ```
 
+### The build that actually ships
+
+CI does all of the above on every push to `main`
+(`.github/workflows/singlefile.yml`) and publishes the file as a release asset,
+so the newest deployable build is always at a stable URL:
+
+    https://github.com/bbaker5150/metcal-quality-workbench/releases/latest/download/metcal-quality.html
+
+Deploying is then a file copy: overwrite `metcal-quality.html` in the library
+the app page points at. The `.aspx` never changes, and the library keeps the
+previous version for rollback.
+
+Nothing in CI touches SharePoint. A commercial runner cannot reach a `.mil`
+tenant, and a credential that could write to one does not belong in commercial
+CI — the last hop stays on a CAC-authenticated workstation.
+
+The page carries the build it came from, in a `<meta name="x-app-build">`
+tag and on `window.__METCAL_BUILD__`. Since the file is overwritten in place,
+its URL says nothing about which build is live; that stamp is how you tell.
+
 ## SharePoint lists
 
 Five lists, prefixed `METCAL` by default: `Artifacts`, `CustodySchedule`,
