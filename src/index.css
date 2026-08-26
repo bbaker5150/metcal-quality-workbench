@@ -107,6 +107,32 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Hide the Forge runtime's floating controls.
+   ---------------------------------------------------------------------------
+   The vendored runtime pins a red REC button and a dev-console toggle to the
+   bottom-right of every screen at z-index 2147483647. They are what a
+   scaffolding tool gives a non-developer, and they sit on top of the app in
+   every screenshot.
+
+   Only the buttons go. The globals those scripts install stay exactly as they
+   were — `window.__PseudoDevConsole` is what the host page looks for before
+   deciding whether to show its "Not Secured" advisory, and that check does not
+   care whether anything is painted. `!important` is required because both
+   elements carry inline positioning styles.
+
+   The ids come from the runtime itself, read out of the live DOM rather than
+   guessed from the source: an earlier attempt targeted `wct-*` names that turn
+   out to be namespace keys, not element ids, and hid nothing at all. The smoke
+   test therefore asserts no fixed-position overlay is *visible*, which stays
+   true through a rename, instead of asserting these ids are hidden, which
+   would pass whether or not they exist. */
+#pdc-open,
+#test-recorder-launcher,
+.test-recorder-ui {
+  display: none !important;
+}
+
 @layer components {
   .surface {
     background-color: var(--surface-raised);

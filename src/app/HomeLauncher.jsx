@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
+import NavButton from '../shared/NavButton.jsx';
 import modules from './moduleRegistry.jsx';
 import seal from '../assets/navair-seal-384.webp';
 import { useData } from '../data/DataProvider.jsx';
@@ -81,9 +81,9 @@ function ModuleCard({ module, index }) {
   const accentRule = accent === 'brass' ? 'via-brass-500/50' : 'via-signal-500/50';
 
   return (
-    <Link
+    <NavButton
       to={`/${module.route}`}
-      className="group surface relative flex flex-col overflow-hidden rounded-[var(--radius-card)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-ink-900/[0.06] dark:hover:shadow-black/30"
+      className="group surface relative flex flex-col overflow-hidden rounded-[var(--radius-card)] p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-ink-900/[0.06] dark:hover:shadow-black/30"
       style={{ animation: `rise 420ms cubic-bezier(.2,.7,.3,1) ${index * 55}ms both` }}
     >
       {/* The accent only appears on hover, so the grid reads as one calm
@@ -106,6 +106,6 @@ function ModuleCard({ module, index }) {
       <h2 className="mt-4 text-[0.95rem] font-semibold tracking-tight">{module.title}</h2>
       <p className={`mt-0.5 text-[0.76rem] font-medium ${accentText}`}>{module.subtitle}</p>
       <p className="muted mt-3 text-[0.82rem] leading-relaxed">{module.blurb}</p>
-    </Link>
+    </NavButton>
   );
 }

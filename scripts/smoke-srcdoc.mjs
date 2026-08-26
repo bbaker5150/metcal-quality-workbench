@@ -85,7 +85,7 @@ if (frame) {
     `(${images.length} images)`);
 
   // RRPT — the tracker is the landing tab, so custody must be on screen.
-  await frame.getByRole('link', { name: /Round-Robin Proficiency Tests/ }).first().click();
+  await frame.getByRole('button', { name: /Round-Robin Proficiency Tests/ }).first().click();
   await page.waitForTimeout(900);
   const rrpt = await frame.locator('body').innerText();
   check('routing into a module works', /Current custody/.test(rrpt));
@@ -110,9 +110,9 @@ if (frame) {
   check('QA engine evaluated the seed data', /EVALUATE/.test(results) && /FAIL/.test(results));
 
   // Training Library — the filter chips are the whole interaction.
-  await frame.getByRole('link', { name: /All modules/ }).click();
+  await frame.getByRole('button', { name: /All modules/ }).click();
   await page.waitForTimeout(600);
-  await frame.getByRole('link', { name: /Training Library/ }).first().click();
+  await frame.getByRole('button', { name: /Training Library/ }).first().click();
   await page.waitForTimeout(900);
   const beforeFilter = await frame.locator('body').innerText();
   await frame.getByRole('button', { name: /^Microwave/ }).click();
@@ -121,6 +121,40 @@ if (frame) {
   check('library filters down to one measurement area',
     /Electrical/.test(beforeFilter) && !/Deadweight Tester Operation/.test(afterFilter)
       && /Coaxial Connector Care/.test(afterFilter));
+}
+
+if (frame) {
+  // Nothing in the app may carry a navigable href. Routing is in memory, so
+  // any path href points at a URL that exists on no server — and inside a
+  // SharePoint page, a host click handler reaching that anchor before React
+  // does sends the browser to a 404 on the tenant. This is the check that
+  // srcdoc alone cannot make: a srcdoc document inherits its parent's base
+  // URL, so such an href really is navigable there too.
+  const hrefs = await frame.evaluate(() =>
+    [...document.querySelectorAll('a[href]')]
+      .map((a) => a.getAttribute('href'))
+      .filter((h) => h && !/^(https?:|mailto:|#)/.test(h)));
+  check('no in-app anchor carries a navigable href', hrefs.length === 0, hrefs.slice(0, 3).join(' | '));
+
+  // The Forge runtime's floating controls are hidden, but its globals — which
+  // are what silence the host's "Not Secured" advisory — must survive that.
+  //
+  // Asked as "is any fixed overlay visible", not "are these two ids hidden".
+  // The id form passes when the ids do not exist, which is exactly how the
+  // first attempt at this shipped visible buttons alongside a green check.
+  const forge = await frame.evaluate(() => {
+    const overlays = [...document.body.querySelectorAll('*')]
+      .filter((el) => getComputedStyle(el).position === 'fixed')
+      .filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      })
+      .map((el) => `${el.tagName}#${el.id || '?'}:${(el.textContent || '').trim().slice(0, 12)}`);
+    return { overlays, globalStillThere: typeof window.__PseudoDevConsole !== 'undefined' };
+  });
+  check('no floating overlay is visible, and the Forge globals survive',
+    forge.overlays.length === 0 && forge.globalStillThere,
+    JSON.stringify(forge));
 }
 
 check('no uncaught errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | '));
