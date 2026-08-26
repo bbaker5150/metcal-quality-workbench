@@ -1,4 +1,4 @@
-# METCAL Quality &amp; Training Workbench
+# METCAL Quality & Training Workbench
 
 A workbench-style app for the NAVAIR METCAL Quality and Training Program: the
 regional round-robin proficiency test, from the moment an artifact leaves one
@@ -20,8 +20,8 @@ npm test
 | | |
 | --- | --- |
 | **RRPT Logistics** | Custody matrix, digital AIIS intake, shipping dispatch |
-| **Test Execution &amp; SPC** | Six-run worksheet, QA evaluation engine, cross-site Shewhart charts |
-| **Auditor &amp; Lab Scheduler** | JNACT/NACT calendar and competency pre-brief dossiers |
+| **Test Execution & SPC** | Six-run worksheet, QA evaluation engine, cross-site Shewhart charts |
+| **Auditor & Lab Scheduler** | JNACT/NACT calendar and competency pre-brief dossiers |
 | **Training Library** | Procedures and templates by measurement discipline |
 | **MEASURE Cards** | METER card automation for NARRPTR / RRPT |
 

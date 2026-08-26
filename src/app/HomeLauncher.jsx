@@ -36,7 +36,7 @@ export default function HomeLauncher() {
           NAVAIR&nbsp;&middot;&nbsp;METCAL
         </p>
         <h1 className="mt-2 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-          Quality &amp; Training Program
+          Quality & Training Program
         </h1>
         <p className="muted mt-3 max-w-xl text-balance text-[0.9rem] leading-relaxed">
           Regional round-robin proficiency testing, from the moment an artifact leaves
