@@ -7,7 +7,7 @@ import { useData } from '../data/DataProvider.jsx';
 
 /**
  * The launcher is the whole product to anyone opening it for the first time,
- * so it gets the space. One seal, one sentence, five doors.
+ * so it gets the space. One seal, one sentence, three doors.
  */
 export default function HomeLauncher() {
   const { source, counts } = useData();
@@ -86,8 +86,8 @@ function ModuleCard({ module, index }) {
       className="group surface relative flex flex-col overflow-hidden rounded-[var(--radius-card)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-ink-900/[0.06] dark:hover:shadow-black/30"
       style={{ animation: `rise 420ms cubic-bezier(.2,.7,.3,1) ${index * 55}ms both` }}
     >
-      {/* The accent only appears on hover, so a grid of five cards reads as
-          one calm surface at rest rather than five competing ones. */}
+      {/* The accent only appears on hover, so the grid reads as one calm
+          surface at rest rather than three competing ones. */}
       <span
         aria-hidden
         className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${accentRule} to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100`}

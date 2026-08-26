@@ -1,69 +1,50 @@
 import { lazy } from 'react';
-import { Truck, Activity, CalendarCheck, Library, IdCard } from 'lucide-react';
+import { Activity, CalendarCheck, Library } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// The five modules, in the order the work actually happens.
+// The three core functions, in the order the program runs.
 // ---------------------------------------------------------------------------
-// An artifact arrives (logistics), gets measured (testing), the lab gets
-// audited on the result (audits), people are trained against the procedures
-// (training), and the hours get reported (measure). Each module owns its own
-// subtree and is loaded on demand; the shell knows nothing but this table.
+// Artifacts go round the region and get measured (RRPT), labs get audited on
+// the strength of those results (Schedule Auditor), and the procedures behind
+// both live in one place (Training Library). Each module owns its own subtree
+// and is loaded on demand; the shell knows nothing but this table.
 
 const modules = [
   {
-    id: 'logistics',
-    route: 'logistics',
-    title: 'RRPT Logistics',
-    subtitle: 'Custody, intake, and dispatch',
+    id: 'rrpt',
+    route: 'rrpt',
+    title: 'Round-Robin Proficiency Tests',
+    short: 'RRPT',
+    subtitle: 'Tracker, submission, and live SPC',
     blurb:
-      'Track which site holds which artifact, run the digital AIIS intake, and generate handoff tickets between participating labs.',
-    icon: Truck,
-    accent: 'signal',
-    Component: lazy(() => import('../modules/logistics/LogisticsModule.jsx')),
-  },
-  {
-    id: 'testing',
-    route: 'testing',
-    title: 'Test Execution & SPC',
-    subtitle: 'Six-run worksheet and QA engine',
-    blurb:
-      'Environmental pre-check, the six-run grid, automatic z-score evaluation, and live cross-site Shewhart charts.',
+      'Where every artifact is and where it goes next, the PT instruction and template for each one, result submission by import or web form, and live SPC across all sites.',
     icon: Activity,
-    accent: 'brass',
-    Component: lazy(() => import('../modules/testing/TestingModule.jsx')),
+    accent: 'signal',
+    Component: lazy(() => import('../modules/rrpt/RrptModule.jsx')),
   },
   {
     id: 'audits',
     route: 'audits',
-    title: 'Auditor & Lab Scheduler',
-    subtitle: 'JNACT / NACT windows',
+    title: 'Schedule Auditor',
+    short: 'Auditors',
+    subtitle: 'Roster and lab audit calendar',
     blurb:
-      'The master audit calendar, plus a pre-brief dossier synthesising a lab’s pass rates, z-score history, and logged hours.',
+      'The NAVAIR auditor roster with scope competency and certification currency, against every lab code and its scheduled audit date.',
     icon: CalendarCheck,
-    accent: 'signal',
+    accent: 'brass',
     Component: lazy(() => import('../modules/audits/AuditsModule.jsx')),
   },
   {
-    id: 'training',
-    route: 'training',
+    id: 'library',
+    route: 'library',
     title: 'Training Library',
-    subtitle: 'Procedures by discipline',
+    short: 'Library',
+    subtitle: 'Documents by measurement area',
     blurb:
-      'A filterable hub of SOPs, instructions, and templates across Electrical, Pressure, Microwave, and Dimensional.',
+      'Technical and training documents with their links and resources, categorised by measurement area so a lab finds its own procedures first.',
     icon: Library,
-    accent: 'brass',
-    Component: lazy(() => import('../modules/training/TrainingModule.jsx')),
-  },
-  {
-    id: 'measure',
-    route: 'measure',
-    title: 'MEASURE Cards',
-    subtitle: 'METER card automation',
-    blurb:
-      'One-click METER cards pre-populated for NARRPTR / RRPT, with logged hours filled into Block 40.',
-    icon: IdCard,
     accent: 'signal',
-    Component: lazy(() => import('../modules/measure/MeasureModule.jsx')),
+    Component: lazy(() => import('../modules/library/LibraryModule.jsx')),
   },
 ];
 

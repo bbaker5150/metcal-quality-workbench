@@ -48,7 +48,7 @@ const TONES = {
 export function Badge({ tone = 'neutral', children, className = '' }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.7rem] font-medium tracking-wide uppercase ring-1 ring-inset ${TONES[tone] || TONES.neutral} ${className}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[0.7rem] font-medium tracking-wide uppercase ring-1 ring-inset ${TONES[tone] || TONES.neutral} ${className}`}
     >
       {children}
     </span>
@@ -70,21 +70,57 @@ export function Button({ variant = 'ghost', className = '', children, ...rest })
   );
 }
 
-/** Placeholder body for a module that is scaffolded but not yet built out. */
-export function ComingSoon({ points }) {
+/** A labelled number. The unit is separated so the figure stays the loud part. */
+export function Stat({ label, value, unit, tone, hint }) {
+  const toneText = tone ? (TONES[tone] || '').split(' ').find((c) => c.startsWith('text-')) : '';
   return (
-    <div className="px-5 py-6">
-      <p className="muted text-[0.83rem]">
-        Scaffolded. The data layer, routing, and theme are live — this module’s screens land next.
+    <div className="px-5 py-4">
+      <p className="muted text-[0.7rem] font-medium uppercase tracking-[0.12em]">{label}</p>
+      <p className={`tnum mt-1.5 text-2xl font-semibold tracking-tight ${toneText || ''}`}>
+        {value}
+        {unit && <span className="muted ml-1 text-sm font-normal">{unit}</span>}
       </p>
-      <ul className="mt-4 space-y-2">
-        {points.map((point) => (
-          <li key={point} className="flex gap-2.5 text-[0.83rem]">
-            <span className="mt-[0.45rem] size-1 shrink-0 rounded-full bg-brass-500" />
-            <span>{point}</span>
-          </li>
-        ))}
-      </ul>
+      {hint && <p className="muted mt-1 text-[0.74rem]">{hint}</p>}
     </div>
   );
+}
+
+/**
+ * Single-select filter row.
+ *
+ * Buttons rather than a <select>: the Flank Speed sanitiser blocks native form
+ * submission, and there are few enough options that showing them all is
+ * friendlier than hiding them behind a control anyway.
+ */
+export function FilterChips({ options, value, onChange, allLabel = 'All' }) {
+  const all = [{ key: '', label: allLabel }, ...options];
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {all.map((option) => {
+        const active = value === option.key;
+        return (
+          <button
+            key={option.key || '_all'}
+            type="button"
+            onClick={() => onChange(option.key)}
+            aria-pressed={active}
+            className={`rounded-full px-3 py-1 text-[0.75rem] font-medium transition-colors ${
+              active
+                ? 'bg-signal-600 text-white'
+                : 'hairline border muted hover:bg-ink-500/[0.06]'
+            }`}
+          >
+            {option.label}
+            {option.count != null && (
+              <span className={`tnum ml-1.5 ${active ? 'text-white/70' : 'opacity-60'}`}>{option.count}</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function EmptyState({ children }) {
+  return <p className="muted px-5 py-8 text-center text-[0.83rem]">{children}</p>;
 }

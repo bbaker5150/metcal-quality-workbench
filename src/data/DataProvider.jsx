@@ -83,9 +83,10 @@ export function DataProvider({ children }) {
       data,
       counts: {
         artifacts: data.artifacts?.length || 0,
-        sites: new Set((data.custody || []).map((c) => c.CurrentSite)).size,
+        sites: new Set((data.rotation || []).map((r) => r.Site)).size,
         ptResults: data.ptResults?.length || 0,
         auditors: data.auditors?.length || 0,
+        labAudits: data.labAudits?.length || 0,
         trainingDocs: data.trainingDocs?.length || 0,
       },
       artifactById: (id) => (data.artifacts || []).find((a) => a.Id === id),

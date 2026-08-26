@@ -70,7 +70,7 @@ check('manifest is the first line', appHtml.startsWith('<!--WFC-MANIFEST:'));
 check('runs inside an about:srcdoc frame', !!frame);
 check('zero failed subresource requests', failures.length === 0, failures.slice(0, 3).join(' | '));
 check('launcher rendered', /Quality & Training Program/.test(text));
-check('all five modules listed', ['RRPT Logistics', 'Test Execution', 'Auditor', 'Training Library', 'MEASURE Cards']
+check('all three modules listed', ['Round-Robin Proficiency Tests', 'Schedule Auditor', 'Training Library']
   .every((t) => text.includes(t)));
 check('fell back to sample data when the lists 404', /Sample/.test(text));
 
@@ -84,11 +84,43 @@ if (frame) {
   check('every image embedded and decoded', images.length > 0 && images.every((i) => i.embedded && i.decoded),
     `(${images.length} images)`);
 
-  await frame.getByRole('link', { name: /Test Execution/ }).first().click();
+  // RRPT — the tracker is the landing tab, so custody must be on screen.
+  await frame.getByRole('link', { name: /Round-Robin Proficiency Tests/ }).first().click();
   await page.waitForTimeout(900);
-  const after = await frame.locator('body').innerText();
-  check('routing into a module works', /Proficiency test results/.test(after));
-  check('QA engine evaluated the seed data', /EVALUATE/.test(after) && /FAIL/.test(after));
+  const rrpt = await frame.locator('body').innerText();
+  check('routing into a module works', /Current custody/.test(rrpt));
+  check('tracker answers both of its questions',
+    /Current custody/.test(rrpt) && /Scheduled to receive/.test(rrpt));
+
+  // The SPC tab renders charts through recharts, which needs a real layout
+  // pass — a zero-height container silently draws nothing, and that is
+  // exactly the failure a DOM-only test cannot see.
+  await frame.getByRole('button', { name: /Live SPC/ }).click();
+  await page.waitForTimeout(1200);
+  const svgs = await frame.evaluate(() =>
+    [...document.querySelectorAll('svg.recharts-surface')]
+      .map((el) => ({ w: el.clientWidth, h: el.clientHeight, dots: el.querySelectorAll('circle').length })));
+  check('SPC charts drew with real dimensions and points',
+    svgs.length > 0 && svgs.every((c) => c.w > 100 && c.h > 80 && c.dots > 0),
+    `(${svgs.length} charts)`);
+
+  await frame.getByRole('button', { name: /Results/ }).click();
+  await page.waitForTimeout(700);
+  const results = await frame.locator('body').innerText();
+  check('QA engine evaluated the seed data', /EVALUATE/.test(results) && /FAIL/.test(results));
+
+  // Training Library — the filter chips are the whole interaction.
+  await frame.getByRole('link', { name: /All modules/ }).click();
+  await page.waitForTimeout(600);
+  await frame.getByRole('link', { name: /Training Library/ }).first().click();
+  await page.waitForTimeout(900);
+  const beforeFilter = await frame.locator('body').innerText();
+  await frame.getByRole('button', { name: /^Microwave/ }).click();
+  await page.waitForTimeout(500);
+  const afterFilter = await frame.locator('body').innerText();
+  check('library filters down to one measurement area',
+    /Electrical/.test(beforeFilter) && !/Deadweight Tester Operation/.test(afterFilter)
+      && /Coaxial Connector Care/.test(afterFilter));
 }
 
 check('no uncaught errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | '));

@@ -1,8 +1,8 @@
 # METCAL Quality & Training Workbench
 
-A workbench-style app for the NAVAIR METCAL Quality and Training Program: the
-regional round-robin proficiency test, from the moment an artifact leaves one
-lab to the METER card that closes it out.
+A workbench-style app for the NAVAIR METCAL Quality and Training Program,
+covering three core functions: the regional round-robin proficiency test, the
+lab audit schedule, and the training library.
 
 It ships as **one self-contained HTML file** dropped into a SharePoint document
 library, reading and writing SharePoint lists, and falls back to a seeded
@@ -15,18 +15,56 @@ npm run build:singlefile   # -> build-singlefile/metcal-quality.html
 npm test
 ```
 
-## Modules
+## The three core functions
 
-| | |
-| --- | --- |
-| **RRPT Logistics** | Custody matrix, digital AIIS intake, shipping dispatch |
-| **Test Execution & SPC** | Six-run worksheet, QA evaluation engine, cross-site Shewhart charts |
-| **Auditor & Lab Scheduler** | JNACT/NACT calendar and competency pre-brief dossiers |
-| **Training Library** | Procedures and templates by measurement discipline |
-| **MEASURE Cards** | METER card automation for NARRPTR / RRPT |
+### 1. Round-Robin Proficiency Tests
 
-The launcher, theme, routing, and data layer are built. The modules render live
-data and each lists what it still needs; see the "Next up" panel in each one.
+Four views over one artifact population, filtered by measurement area:
+
+- **Tracker** — which site holds which model right now, and which site is
+  scheduled to receive which model next. Both questions come off the same
+  rotation table, one row per leg rather than one row per artifact, which is
+  what lets a single query answer them separately.
+- **Live SPC** — cross-site control charts, one per artifact with results from
+  three or more sites. Plotted in *z* rather than engineering units, so ohms,
+  volts, and degrees share a chart whose ±2 and ±3 lines mean the same thing on
+  every series. The *z* is signed here even though the tiers are set on |z|:
+  a lab reading consistently high is a different problem from one that scatters.
+- **Results** — every submission with its average, s, z, and verdict.
+- **Instructions & submission** — the PT instruction and template that belong
+  with each artifact, plus workbook import.
+
+### 2. Schedule Auditor
+
+The NAVAIR auditor roster — home site, qualified measurement areas, scope
+competency, certification expiry — against every lab code and its scheduled
+audit date. Overdue audits, open findings, and lapsing competency are counted
+at the top, because those are the three things that make somebody open it.
+
+### 3. Training Library
+
+Technical and training documents grouped by measurement area, filterable by
+area and document type and searchable across titles, document numbers, and
+summaries.
+
+## Mock data
+
+Everything runs on `src/data/seedData.js` until the SharePoint lists exist:
+10 artifacts across 5 measurement areas, 39 rotation legs, 21 PT results,
+8 auditors, 12 lab codes, and 16 library documents.
+
+It is shaped to be demonstrable rather than merely present. Tests enforce the
+properties a demo depends on — all three evaluation tiers appear, at least one
+repeatability warning appears, at least two artifacts have enough cross-site
+history to fill a control chart, no artifact is in two places at once, and each
+leg starts after the previous one ends.
+
+**Personnel names are placeholders, and a test fails the build if they are
+not.** This repository is public and the single-file build is published as a
+public release asset, so every name reaching version control reaches the
+internet. The real roster belongs in the SharePoint list at runtime. Site
+codes, models, and document numbers are the genuine shape of the program —
+none of that is sensitive, and the app is meaningless without it.
 
 ## The QA engine
 
@@ -70,7 +108,7 @@ Verify a change with:
 ```bash
 npm run build:singlefile
 npm i --no-save playwright && npx playwright install chromium
-node scripts/smoke-srcdoc.mjs      # 13 checks in a real srcdoc frame
+node scripts/smoke-srcdoc.mjs      # 16 checks in a real srcdoc frame
 
 # ...or point it at a downloaded release, to check what actually ships:
 # node scripts/smoke-srcdoc.mjs ./metcal-quality.html
@@ -98,9 +136,18 @@ its URL says nothing about which build is live; that stamp is how you tell.
 
 ## SharePoint lists
 
-Five lists, prefixed `METCAL` by default: `Artifacts`, `CustodySchedule`,
-`PTResults`, `Auditors`, `TrainingDocs`. Schemas live in
-`src/data/listSchema.js`.
+Six lists, prefixed `METCAL` by default, grouped by the module that owns them:
+
+| Module | Lists |
+| --- | --- |
+| RRPT | `Artifacts`, `Rotation`, `PTResults` |
+| Schedule Auditor | `Auditors`, `LabAudits` |
+| Training Library | `TrainingDocs` |
+
+Schemas live in `src/data/listSchema.js`, and a test asserts the schema and the
+seed describe exactly the same set — a container the app never reads would
+provision an empty list on the live site, and a collection with no container
+would have nowhere to be saved.
 
 Columns are created from Field schema XML, not a JSON POST — the Fields
 collection is polymorphic and rejects an untyped body with a bare 400.
@@ -117,12 +164,10 @@ Configure a deployment by editing the `<head>` of the built file, no rebuild:
 </script>
 ```
 
-## Seed data
+## How the seed stays honest
 
-`src/data/seedData.js` makes the app fully interactive on first open. Averages,
-standard deviations, z-scores, and verdicts are all **derived by the engine**
-rather than written by hand, so the seed can never disagree with the code.
-
-Auditor and metrologist names are placeholders. This repository is public; the
-real roster belongs in the SharePoint list at runtime, not in version control.
+Averages, standard deviations, z-scores, and verdicts in `seedData.js` are
+**derived by the engine** rather than written by hand, so the seed can never
+disagree with the code. See *Mock data* above for what it contains and what the
+tests hold it to.
 A test enforces that.
