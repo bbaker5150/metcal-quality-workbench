@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by a class on <html>, not the OS preference alone, so
+   the in-app toggle can override the system. index.html paints the class
+   before React mounts to avoid a flash. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Ink — the neutral ramp. Cool slate rather than pure grey; on a page this
+     dense, a warm neutral reads muddy next to the accent. */
+  --color-ink-50:  oklch(0.985 0.003 250);
+  --color-ink-100: oklch(0.965 0.005 250);
+  --color-ink-200: oklch(0.922 0.008 250);
+  --color-ink-300: oklch(0.858 0.012 250);
+  --color-ink-400: oklch(0.700 0.018 250);
+  --color-ink-500: oklch(0.560 0.022 250);
+  --color-ink-600: oklch(0.448 0.026 252);
+  --color-ink-700: oklch(0.360 0.030 254);
+  --color-ink-800: oklch(0.268 0.030 256);
+  --color-ink-900: oklch(0.196 0.028 258);
+  --color-ink-950: oklch(0.148 0.026 260);
+
+  /* Signal — the primary accent. A deep instrument blue that survives being
+     printed and photocopied, which this eventually will be. */
+  --color-signal-300: oklch(0.780 0.105 245);
+  --color-signal-400: oklch(0.690 0.140 250);
+  --color-signal-500: oklch(0.590 0.165 253);
+  --color-signal-600: oklch(0.500 0.170 255);
+  --color-signal-700: oklch(0.420 0.150 257);
+
+  /* Brass — the NAVAIR gold, used sparingly: rules, the seal's halo, the
+     active tab. It is a punctuation mark, not a colour scheme. */
+  --color-brass-300: oklch(0.860 0.095 85);
+  --color-brass-400: oklch(0.800 0.120 82);
+  --color-brass-500: oklch(0.730 0.130 80);
+  --color-brass-600: oklch(0.640 0.120 78);
+
+  /* Evaluation tiers, straight from the QA engine: |z| <= 2 pass,
+     2 < |z| < 3 evaluate, |z| >= 3 fail. These three colours mean exactly
+     one thing each anywhere in the app. */
+  --color-pass-400: oklch(0.760 0.150 155);
+  --color-pass-600: oklch(0.580 0.140 155);
+  --color-evaluate-400: oklch(0.820 0.140 75);
+  --color-evaluate-600: oklch(0.660 0.140 62);
+  --color-fail-400: oklch(0.700 0.180 22);
+  --color-fail-600: oklch(0.560 0.190 25);
+
+  --font-sans: "Inter var", Inter, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  :root {
+    --surface: var(--color-ink-50);
+    --surface-raised: white;
+    --surface-sunken: var(--color-ink-100);
+    --border-subtle: var(--color-ink-200);
+    --text-strong: var(--color-ink-900);
+    --text-muted: var(--color-ink-500);
+    --halo: oklch(0.590 0.165 253 / 0.10);
+  }
+
+  .dark {
+    --surface: var(--color-ink-950);
+    --surface-raised: var(--color-ink-900);
+    --surface-sunken: oklch(0.120 0.024 260);
+    --border-subtle: var(--color-ink-800);
+    --text-strong: var(--color-ink-100);
+    --text-muted: var(--color-ink-400);
+    --halo: oklch(0.690 0.140 250 / 0.16);
+  }
+
+  html {
+    color-scheme: light;
+  }
+  .dark html,
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--text-strong);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Numbers in a metrology app are read in columns and compared down the
+     page. Tabular figures keep the digits from dancing. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  ::selection {
+    background: var(--halo);
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-signal-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .surface {
+    background-color: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+  }
+  .hairline {
+    border-color: var(--border-subtle);
+  }
+  .muted {
+    color: var(--text-muted);
+  }
+}
+
+/* Respect a reduced-motion preference — the launcher animates on entry. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}

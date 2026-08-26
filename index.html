@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NAVAIR METCAL — Quality &amp; Training</title>
+    <!--
+      Optional per-deployment configuration, editable in the built file without
+      a rebuild:
+
+        window.METCAL_CONFIG = {
+          listPrefix: 'METCAL',                  // isolate a second instance
+          webUrl: 'https://tenant/sites/other',  // target a different web
+          useMockData: true                      // force the seeded dataset
+        };
+    -->
+    <script>
+      // Paint the stored theme before React mounts, so a dark-mode reload
+      // never flashes a white page.
+      try {
+        var t = localStorage.getItem('metcal-theme');
+        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

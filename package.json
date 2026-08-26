@@ -1,0 +1,33 @@
+{
+  "name": "metcal-quality-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NAVAIR METCAL Quality and Training Program workbench",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "vite build",
+    "build:singlefile": "vite build --config vite.singlefile.config.mjs",
+    "preview": "vite preview --port 3000",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "lucide-react": "^0.545.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router": "^8.3.0",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "tailwindcss": "^4.1.18",
+    "vite": "^6.4.3",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^4.1.10"
+  }
+}

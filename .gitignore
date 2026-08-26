@@ -1,0 +1,12 @@
+node_modules/
+/build
+/build-singlefile
+/coverage
+.DS_Store
+*.local
+
+# scratch from local verification runs
+.shots/
+.shot.mjs
+.probe.mjs
+.tiers.mjs
