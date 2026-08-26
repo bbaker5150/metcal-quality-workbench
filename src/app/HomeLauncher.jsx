@@ -38,11 +38,6 @@ export default function HomeLauncher() {
         <h1 className="mt-2 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           Quality & Training Program
         </h1>
-        <p className="muted mt-3 max-w-xl text-balance text-[0.9rem] leading-relaxed">
-          Regional round-robin proficiency testing, from the moment an artifact leaves
-          one lab to the METER card that closes it out.
-        </p>
-
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.75rem]">
           <span className="flex items-center gap-1.5">
             <span
@@ -51,7 +46,7 @@ export default function HomeLauncher() {
               }`}
             />
             <span className="muted">
-              {source === 'sharepoint' ? 'SharePoint lists' : 'Sample data'}
+              {source === 'sharepoint' ? 'SharePoint lists' : 'Mock data'}
             </span>
           </span>
           <span className="muted tnum">{counts.artifacts} artifacts</span>

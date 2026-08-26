@@ -45,7 +45,7 @@ page.on('response', (r) => {
   if (r.status() >= 400 && !r.url().includes('/_api/')) failures.push(`${r.status()} ${r.url()}`);
 });
 // The lists are not provisioned in this harness; 404 is the documented
-// first-run path and the app is expected to fall back to sample data.
+// first-run path and the app is expected to fall back to mock data.
 await page.route('**/_api/**', (route) => route.fulfill({ status: 404, body: '{}' }));
 
 await page.addInitScript((html) => { window.__APP_HTML__ = html; }, appHtml);
@@ -72,7 +72,7 @@ check('zero failed subresource requests', failures.length === 0, failures.slice(
 check('launcher rendered', /Quality & Training Program/.test(text));
 check('all three modules listed', ['Round-Robin Proficiency Tests', 'Schedule Auditor', 'Training Library']
   .every((t) => text.includes(t)));
-check('fell back to sample data when the lists 404', /Sample/.test(text));
+check('fell back to mock data when the lists 404', /Mock data/.test(text));
 
 if (frame) {
   check('Forge runtime installed its globals',

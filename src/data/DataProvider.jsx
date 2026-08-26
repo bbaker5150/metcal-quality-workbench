@@ -11,7 +11,7 @@ import { resolveWebUrl, spGet, SharePointError } from './spContext.js';
 // provider resolves it once at boot and every screen just consumes the result.
 //
 // Falling back is silent by design but never invisible — `source` is surfaced
-// in the top bar and on the launcher, because a page quietly showing sample
+// in the top bar and on the launcher, because a page quietly showing mock
 // data while someone believes it is live is the worst outcome available.
 
 const DataContext = createContext(null);

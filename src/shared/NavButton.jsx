@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate } from 'react-router';
 
 // ---------------------------------------------------------------------------
 // In-app navigation that renders no href.
@@ -18,17 +18,6 @@ import { useNavigate, useLocation } from 'react-router';
 // A button is also the honest ARIA role: these change a view, they do not
 // address a document. Nothing is lost — under MemoryRouter, opening one in a
 // new tab could only ever have reloaded the app at its start route.
-
-export function useModuleNav() {
-  const navigate = useNavigate();
-  return (route) => navigate(route);
-}
-
-/** Is this route the one currently showing? */
-export function useIsActive(route) {
-  const { pathname } = useLocation();
-  return pathname === route || pathname.startsWith(`${route}/`);
-}
 
 export default function NavButton({ to, className = '', children, ...rest }) {
   const navigate = useNavigate();
