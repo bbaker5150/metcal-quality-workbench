@@ -10,7 +10,13 @@ import { assertSanitiserSafe } from './hardenInlineHtml.mjs';
 
 const PORT = 4291;
 const WEB = `http://127.0.0.1:${PORT}/sites/ISEA`;
-const appHtml = readFileSync(new URL('../build-singlefile/metcal-quality.html', import.meta.url), 'utf8');
+// Defaults to the local build, but takes a path so a *downloaded release
+// asset* can be put through the same checks — verifying the artifact that will
+// actually be deployed, rather than a rebuild that merely ought to match it.
+const target = process.argv[2]
+  ? new URL(process.argv[2], `file://${process.cwd()}/`)
+  : new URL('../build-singlefile/metcal-quality.html', import.meta.url);
+const appHtml = readFileSync(target, 'utf8');
 
 const hostPage = `<!doctype html><html><head><meta charset="utf-8"></head>
 <body style="margin:0">

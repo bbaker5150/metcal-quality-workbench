@@ -71,6 +71,9 @@ Verify a change with:
 npm run build:singlefile
 npm i --no-save playwright && npx playwright install chromium
 node scripts/smoke-srcdoc.mjs      # 13 checks in a real srcdoc frame
+
+# ...or point it at a downloaded release, to check what actually ships:
+# node scripts/smoke-srcdoc.mjs ./metcal-quality.html
 ```
 
 ### The build that actually ships
