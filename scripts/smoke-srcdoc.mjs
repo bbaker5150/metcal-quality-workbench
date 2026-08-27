@@ -73,8 +73,11 @@ check('launcher rendered', /Quality & Training Portal/.test(text));
 check('both categories and their modules listed',
   ['Quality', 'Training', 'PT Program', 'Audit Schedule', 'Scopes of Competency',
    'Loss of Capability', 'Preventive Maintenance', 'Annual Training LTR',
-   'By Name Confirmation Sheet', 'Schoolhouse Locations', 'Travel Restrictions',
+   'Schoolhouse Locations', 'Travel Restrictions',
    'External Training: WPT', 'Training Resource Library'].every((t) => text.includes(t)));
+check('the parked modules are not on the launcher',
+  !['Cross-Check Procedures', 'In-Service Check', 'Authorized Service Providers']
+    .some((t) => text.includes(t)));
 check('fell back to mock data when the lists 404', /Mock data/.test(text));
 
 if (frame) {
@@ -137,17 +140,12 @@ if (frame) {
   // Every module must at least mount. A lazy chunk that throws only shows up
   // when somebody opens that one tile, which in a demo is the worst moment.
   const routes = [
-    ['Dashboard Metrics', /Where the programme stands|Where the pipeline stands/i],
+    ['Dashboard Metrics', /Where the program stands|Where the pipeline stands/i],
     ['Audit Schedule', /Lab audit calendar/],
     ['Scopes of Competency', /Scope of competency/],
     ['Loss of Capability', /Currently down/],
     ['Preventive Maintenance', /Maintenance schedule/],
-    ['Cross-Check Procedures', /Procedures/],
-    ['In-Service Check Procedures', /Procedures/],
-    ['Authorized Service Providers', /Authorized list/],
     ['Annual Training LTR', /Annual training letters/],
-    ['By Name Confirmation Sheet', /confirmation sheet/i],
-    ['Schedule \\(02\\)', /Convening calendar/],
     ['Schoolhouse Locations', /Check-in/i],
     ['Travel Restrictions', /Current restrictions/],
     ['External Training: WPT', /Vendor and workplace courses/],
@@ -164,6 +162,25 @@ if (frame) {
   }
   check('every module mounts and renders its own content',
     brokeOn.length === 0, `(${mounted}/${routes.length})${brokeOn.length ? ' failed: ' + brokeOn.join(', ') : ''}`);
+
+  // The annual letter absorbed the by-name sheet and the schedule, so all
+  // three have to be reachable from inside it rather than from the launcher.
+  await frame.getByRole('button', { name: /All modules/ }).click();
+  await page.waitForTimeout(400);
+  await frame.getByRole('button', { name: /Annual Training LTR/ }).first().click();
+  await page.waitForTimeout(700);
+  const ltrTabs = ['By-name confirmation', 'Schedule', 'Instructor notice', 'Auto-schedule'];
+  const seen = [];
+  for (const label of ltrTabs) {
+    await frame.getByRole('button', { name: new RegExp(`^${label}`) }).click();
+    await page.waitForTimeout(600);
+    seen.push(await frame.locator('body').innerText());
+  }
+  check('the letter carries the by-name sheet, schedule, and notices',
+    /confirmation sheet/i.test(seen[0]) && /Convening calendar/i.test(seen[1])
+      && /instructor notice/i.test(seen[2]) && /Propose seats/i.test(seen[3]));
+
+  check('nothing says programme', !/programme/i.test(await frame.locator('body').innerText()));
 }
 
 if (frame) {

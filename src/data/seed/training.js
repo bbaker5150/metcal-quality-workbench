@@ -88,7 +88,7 @@ const enrollments = [
 
 const trainingRefs = [
   { Id: 1, Title: 'CANTRAC Volume II — Course Catalogue', Category: 'Link', Url: 'https://app.prod.cetars.training.navy.mil/cantrac/vol2.html', Summary: 'The authoritative course catalogue. Search by course identification number or CDP to confirm convening dates and quotas.', UpdatedOn: '' },
-  { Id: 2, Title: 'MEASURE — NAVAIR Metrology and Calibration', Category: 'Link', Url: 'https://measure.navair.navy.mil/', Summary: 'Programme documents, procedures, and the authorised service provider list. Needs a CAC.', UpdatedOn: '' },
+  { Id: 2, Title: 'MEASURE — NAVAIR Metrology and Calibration', Category: 'Link', Url: 'https://measure.navair.navy.mil/', Summary: 'Program documents, procedures, and the authorised service provider list. Needs a CAC.', UpdatedOn: '' },
   { Id: 3, Title: 'NAVEDTRA 43100-1 — Personnel Qualification Standards', Category: 'Reference', Url: '', Summary: 'PQS structure and sign-off authority for the calibration rating.', UpdatedOn: '2025-06-01' },
   { Id: 4, Title: 'Billet Training Matrix', Category: 'Reference', Url: '', Summary: 'Which courses are required, recommended, or optional for each billet, by measurement discipline.', UpdatedOn: '2025-10-07' },
   { Id: 5, Title: 'Quota Request Procedure', Category: 'Reference', Url: '', Summary: 'How a site requests a seat: CDP lookup, request routing, and the confirmation deadline.', UpdatedOn: '2025-10-07' },

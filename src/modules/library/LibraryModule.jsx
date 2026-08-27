@@ -156,7 +156,7 @@ export default function LibraryModule() {
   );
 }
 
-// CANTRAC and the programme references sit above the document library rather
+// CANTRAC and the program references sit above the document library rather
 // than inside it: they are where you go to find out what exists, not documents
 // filed by measurement area.
 function Refs({ items }) {
@@ -165,7 +165,7 @@ function Refs({ items }) {
   const refs = items.filter((i) => i.Category !== 'Link');
   return (
     <Panel className="mb-5">
-      <PanelHeader title="Links and references" subtitle="CANTRAC, MEASURE, and the programme references" icon={Link2} />
+      <PanelHeader title="Links and references" subtitle="CANTRAC, MEASURE, and the program references" icon={Link2} />
       <ul className="divide-y divide-[var(--border-subtle)]">
         {[...links, ...refs].map((item) => (
           <li key={item.Id} className="flex items-center gap-4 px-5 py-3">

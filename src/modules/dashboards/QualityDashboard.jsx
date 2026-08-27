@@ -71,7 +71,7 @@ export default function QualityDashboard() {
 
   return (
     <ModulePage module={moduleByRoute('quality-dashboard')}>
-      <Section title="Where the programme stands">
+      <Section title="Where the program stands">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             label="Rounds in flight" value={inFlight} tone="neutral"
@@ -99,7 +99,7 @@ export default function QualityDashboard() {
       <Section title="Needs somebody">
         <AttentionList
           title="Open items"
-          subtitle="Everything the programme is currently carrying, worst first"
+          subtitle="Everything the program is currently carrying, worst first"
           icon={AlertTriangle}
           items={attention}
           empty="Nothing outstanding across audits, proficiency testing, capability, or maintenance."

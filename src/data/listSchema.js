@@ -273,7 +273,7 @@ export const CONTAINERS = [
   {
     key: 'courses',
     suffix: 'Courses',
-    module: 'training-schedule',
+    module: 'annual-ltr',
     template: LIST_TEMPLATE.GENERIC,
     description: 'Course catalogue. CDP is carried alongside the course identifier because a quota is requested by CDP.',
     fields: [
@@ -290,7 +290,7 @@ export const CONTAINERS = [
   {
     key: 'enrollments',
     suffix: 'Enrollments',
-    module: 'training-schedule',
+    module: 'annual-ltr',
     template: LIST_TEMPLATE.GENERIC,
     description: 'Who is scheduled for what. The by-name confirmation sheet and the schedule read the same rows.',
     fields: [

@@ -424,7 +424,7 @@ function Inventory({ artifacts, rotation, results }) {
     <Panel>
       <PanelHeader
         title="PT artifact inventory"
-        subtitle="Every artifact in the programme, with where it is and how far its round has got"
+        subtitle="Every artifact in the program, with where it is and how far its round has got"
         icon={Boxes}
       />
       {artifacts.length === 0 ? (
@@ -621,7 +621,7 @@ function Manual({ procedures }) {
   return (
     <Panel>
       <PanelHeader
-        title="PT programme process manual"
+        title="PT Program process manual"
         subtitle="The quality manual governing the round-robin, and the standard it is written against"
         icon={BookOpen}
       />

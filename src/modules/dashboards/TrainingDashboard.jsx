@@ -30,14 +30,14 @@ export default function TrainingDashboard() {
       key: `notify:${e.Id}`, badge: 'Notify', tone: 'evaluate',
       label: `${e.Person} — ${e.CourseCode}`,
       detail: `Confirmed ${e.ConfirmedOn} · ${courses.get(e.CourseCode)?.Schoolhouse || ''} not yet told`,
-      to: '/training-schedule',
+      to: '/annual-ltr',
     })),
     ...unconfirmed.map((e) => ({
       key: `confirm:${e.Id}`, badge: e.Status === 'Endorsement required' ? 'Endorse' : 'Confirm',
       tone: e.Status === 'Endorsement required' ? 'fail' : 'evaluate',
       label: `${e.Person} — ${e.CourseCode}`,
       detail: `Convenes ${e.StartDate}, ${relative(e.StartDate)} · ${e.QuotaStatus}`,
-      to: e.Status === 'Endorsement required' ? '/wpt' : '/confirmation',
+      to: e.Status === 'Endorsement required' ? '/wpt' : '/annual-ltr',
     })),
     ...outstandingSites.map((site) => ({
       key: `ltr:${site}`, badge: 'LTR', tone: 'evaluate',

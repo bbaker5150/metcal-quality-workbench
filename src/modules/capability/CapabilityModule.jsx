@@ -9,7 +9,7 @@ import { daysOut, relative } from '../../shared/dates.js';
 
 // A capability is down until it is declared restored, and an empty restored
 // date is the whole query. Sorting the open ones by how long they have been
-// down puts the oldest gap first, which is the one the programme office is
+// down puts the oldest gap first, which is the one the program office is
 // least likely to already know about.
 
 export default function CapabilityModule() {

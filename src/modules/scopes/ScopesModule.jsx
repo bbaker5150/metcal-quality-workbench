@@ -9,7 +9,7 @@ import { DISCIPLINES } from '../../data/listSchema.js';
 // A scope of competency is assembled, not authored: the rows already exist,
 // one per declared parameter, and the document is those rows grouped by
 // discipline in the order ISO/IEC 17025 scopes are written — parameter, range,
-// CMC, comments. Generating it from the same rows the programme queries means
+// CMC, comments. Generating it from the same rows the program queries means
 // the published scope and the live capability picture cannot drift apart.
 
 const STATUS_TONE = { Current: 'pass', Suspended: 'fail', Provisional: 'evaluate' };

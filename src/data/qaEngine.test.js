@@ -4,7 +4,7 @@ import {
 } from './qaEngine.js';
 import seed from './seedData.js';
 import { CONTAINERS, listTitle, REFERENCE_LAB, SITES } from './listSchema.js';
-import modules from '../app/moduleRegistry.jsx';
+import modules, { allModules } from '../app/moduleRegistry.jsx';
 
 describe('sigmaPt', () => {
   it('is half the required accuracy', () => {
@@ -223,7 +223,9 @@ describe('the list schema', () => {
   });
 
   it('names each container against a module that exists', () => {
-    const routes = new Set(modules.map((m) => m.id));
+    // Against the full table, hidden included: a parked module's list still
+    // has to be provisionable, or un-parking it would need a schema change.
+    const routes = new Set(allModules.map((m) => m.id));
     for (const container of CONTAINERS) {
       expect({ key: container.key, known: routes.has(container.module) })
         .toEqual({ key: container.key, known: true });
@@ -402,5 +404,38 @@ describe('the expanded seed', () => {
     const json = JSON.stringify(seed);
     expect(json).not.toMatch(/safelinks\.protection/i);
     expect(json).not.toMatch(/@us\.navy\.mil/i);
+  });
+});
+
+describe('the module registry', () => {
+  it('hides the parked modules from the launcher but keeps them resolvable', () => {
+    const parked = ['crosscheck', 'inservice', 'providers'];
+    const visible = new Set(modules.map((m) => m.id));
+    const all = new Set(allModules.map((m) => m.id));
+    for (const id of parked) {
+      expect({ id, listed: visible.has(id), present: all.has(id) })
+        .toEqual({ id, listed: false, present: true });
+    }
+  });
+
+  it('gives every visible module a component and a unique route', () => {
+    const routes = modules.map((m) => m.route);
+    expect(new Set(routes).size).toBe(routes.length);
+    for (const m of modules) expect(typeof m.Component).toBe('object');
+  });
+
+  it('puts exactly one dashboard at the head of each category', () => {
+    for (const category of ['Quality', 'Training']) {
+      const inCat = modules.filter((m) => m.category === category);
+      expect(inCat.filter((m) => m.dashboard)).toHaveLength(1);
+      expect(inCat[0].dashboard).toBe(true);
+    }
+  });
+
+  it('spells it program, not programme', () => {
+    // British spelling crept in across the modules once; this is cheaper than
+    // noticing it again in a demo.
+    const text = JSON.stringify(modules.map((m) => [m.title, m.subtitle, m.blurb]));
+    expect(text).not.toMatch(/programme/i);
   });
 });

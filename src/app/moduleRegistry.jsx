@@ -8,7 +8,7 @@ import {
 // ---------------------------------------------------------------------------
 // The portal, split into its two sides.
 // ---------------------------------------------------------------------------
-// Quality is the metrology programme — audits, proficiency testing, declared
+// Quality is the metrology program — audits, proficiency testing, declared
 // capability, and the maintenance that keeps it all in service. Training is
 // the schoolhouse pipeline. Each module owns its own subtree and is loaded on
 // demand; the shell knows nothing but this table.
@@ -27,7 +27,7 @@ const modules = [
   {
     id: 'quality-dashboard', route: 'quality-dashboard', category: 'Quality', dashboard: true,
     title: 'Dashboard Metrics', subtitle: 'Quality at a glance',
-    blurb: 'Where every programme stands right now: rounds in flight, audits due, capability down, and maintenance overdue.',
+    blurb: 'Where every program stands right now: rounds in flight, audits due, capability down, and maintenance overdue.',
     icon: Gauge, accent: 'signal',
     Component: lazy(() => import('../modules/dashboards/QualityDashboard.jsx')),
   },
@@ -55,7 +55,7 @@ const modules = [
   {
     id: 'capability', route: 'capability', category: 'Quality',
     title: 'Loss of Capability', subtitle: 'What is down, and since when',
-    blurb: 'Labs declare a capability out of service with its range, reason, and date, so the programme office can see the gap and what it puts at risk.',
+    blurb: 'Labs declare a capability out of service with its range, reason, and date, so the program office can see the gap and what it puts at risk.',
     icon: AlertTriangle, accent: 'signal',
     Component: lazy(() => import('../modules/capability/CapabilityModule.jsx')),
   },
@@ -67,21 +67,21 @@ const modules = [
     Component: lazy(() => import('../modules/pm/PmModule.jsx')),
   },
   {
-    id: 'crosscheck', route: 'crosscheck', category: 'Quality',
+    id: 'crosscheck', route: 'crosscheck', category: 'Quality', hidden: true,
     title: 'Cross-Check Procedures', subtitle: 'Between-lab comparisons',
     blurb: 'The procedures governing cross-checks between laboratories, held on MEASURE.',
     icon: GitCompare, accent: 'signal',
     Component: lazy(() => import('../modules/procedures/CrossCheckModule.jsx')),
   },
   {
-    id: 'inservice', route: 'inservice', category: 'Quality',
+    id: 'inservice', route: 'inservice', category: 'Quality', hidden: true,
     title: 'In-Service Check Procedures', subtitle: 'Between calibrations',
     blurb: 'Checks a lab runs on its own standards between scheduled calibrations.',
     icon: Stethoscope, accent: 'brass',
     Component: lazy(() => import('../modules/procedures/InServiceModule.jsx')),
   },
   {
-    id: 'providers', route: 'providers', category: 'Quality',
+    id: 'providers', route: 'providers', category: 'Quality', hidden: true,
     title: 'Authorized Service Providers', subtitle: 'Approved for repair and service',
     blurb: 'The authorised list, held on MEASURE.',
     icon: Contact, accent: 'signal',
@@ -98,24 +98,10 @@ const modules = [
   },
   {
     id: 'annual-ltr', route: 'annual-ltr', category: 'Training',
-    title: 'Annual Training LTR', subtitle: 'Requirements and quotas by FY',
-    blurb: 'The letter that sets required courses and quota allocation for the year, and which sites have acknowledged it.',
+    title: 'Annual Training LTR', subtitle: 'Letter, by-name sheet, and schedule',
+    blurb: 'The letter that sets required courses and quotas, the by-name confirmation sheet it produces, and the convening schedule and schoolhouse notices that follow.',
     icon: FileSignature, accent: 'signal',
     Component: lazy(() => import('../modules/training/AnnualLtrModule.jsx')),
-  },
-  {
-    id: 'confirmation', route: 'confirmation', category: 'Training',
-    title: 'By Name Confirmation Sheet', subtitle: 'Who is confirmed for what',
-    blurb: 'Every name against its course and convening date, with confirmation, quota, and orders status in one sheet.',
-    icon: UserCheck, accent: 'brass',
-    Component: lazy(() => import('../modules/training/ConfirmationModule.jsx')),
-  },
-  {
-    id: 'training-schedule', route: 'training-schedule', category: 'Training',
-    title: 'Schedule (02)', subtitle: 'Auto-schedule and instructor notice',
-    blurb: 'The convening calendar, seats built from the billet matrix, and the schoolhouse notice that follows a confirmation.',
-    icon: CalendarDays, accent: 'signal',
-    Component: lazy(() => import('../modules/training/ScheduleModule.jsx')),
   },
   {
     id: 'schoolhouses', route: 'schoolhouses', category: 'Training',
@@ -141,12 +127,23 @@ const modules = [
   {
     id: 'library', route: 'library', category: 'Training',
     title: 'Training Resource Library', subtitle: 'CANTRAC, references, and procedures',
-    blurb: 'Technical and training documents by measurement area, alongside CANTRAC and the references the programme runs on.',
+    blurb: 'Technical and training documents by measurement area, alongside CANTRAC and the references the program runs on.',
     icon: Library, accent: 'signal',
     Component: lazy(() => import('../modules/library/LibraryModule.jsx')),
   },
 ];
 
-export default modules;
+// Hidden modules stay in the table rather than being deleted: they are parked,
+// not abandoned, and a commented-out block would rot faster than a flag does.
+// Nothing routes to them and nothing lists them until the flag comes off.
+const visible = modules.filter((m) => !m.hidden);
+
+export default visible;
+export const allModules = modules;
+
+// Deliberately resolves against the full table, hidden included. A parked
+// module still renders correctly if something reaches it — what is withdrawn
+// is the way in, not the page.
 export const moduleByRoute = (route) => modules.find((m) => m.route === route);
-export const modulesInCategory = (category) => modules.filter((m) => m.category === category);
+
+export const modulesInCategory = (category) => visible.filter((m) => m.category === category);
