@@ -17,7 +17,10 @@ export default function TopBar() {
 
   return (
     <header className="sticky top-0 z-30 border-b hairline bg-[var(--surface)]/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center px-6">
+      {/* Full width rather than the content column: the bar's job is to pin
+          identity to one corner and controls to the other, and a max-width
+          wrapper leaves both floating in from the edges. */}
+      <div className="flex h-14 w-full items-center px-4 sm:px-6">
         <NavButton to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Home">
           <img src={seal} alt="" width="26" height="26" className="size-[26px]" />
           <span className="hidden text-[0.82rem] font-semibold tracking-tight sm:block">
@@ -41,7 +44,7 @@ export default function TopBar() {
             type="button"
             onClick={toggle}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className="grid size-8 place-items-center rounded-lg border hairline transition-colors hover:bg-ink-500/[0.06]"
+            className="muted grid size-8 place-items-center rounded-lg transition-colors hover:bg-ink-500/[0.08] hover:text-ink-800 dark:hover:text-ink-100"
           >
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>

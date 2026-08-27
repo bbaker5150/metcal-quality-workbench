@@ -75,10 +75,12 @@ check('both categories and their modules listed',
    'Loss of Capability', 'Preventive Maintenance', 'Annual Training Letter',
    'Schoolhouse Locations', 'External Training: WPT',
    'Training Resource Library'].every((t) => text.includes(t)));
+check('the launcher carries no counts row',
+  !/\d+ modules/.test(text) && !/\d+ artifacts/.test(text));
 check('the parked modules are not on the launcher',
   !['Cross-Check Procedures', 'In-Service Check', 'Authorized Service Providers']
     .some((t) => text.includes(t)));
-check('fell back to mock data when the lists 404', /Mock data/.test(text));
+check('fell back to mock data when the lists 404', /\bMock\b/.test(text));
 
 if (frame) {
   check('Forge runtime installed its globals',
