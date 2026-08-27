@@ -329,7 +329,7 @@ export const CONTAINERS = [
   {
     key: 'travelRestrictions',
     suffix: 'TravelRestrictions',
-    module: 'travel',
+    module: 'schoolhouses',
     template: LIST_TEMPLATE.GENERIC,
     description: 'What travel is open, restricted, or needs approval, and on whose authority.',
     fields: [

@@ -73,8 +73,8 @@ check('launcher rendered', /Quality & Training Portal/.test(text));
 check('both categories and their modules listed',
   ['Quality', 'Training', 'PT Program', 'Audit Schedule', 'Scopes of Competency',
    'Loss of Capability', 'Preventive Maintenance', 'Annual Training LTR',
-   'Schoolhouse Locations', 'Travel Restrictions',
-   'External Training: WPT', 'Training Resource Library'].every((t) => text.includes(t)));
+   'Schoolhouse Locations', 'External Training: WPT',
+   'Training Resource Library'].every((t) => text.includes(t)));
 check('the parked modules are not on the launcher',
   !['Cross-Check Procedures', 'In-Service Check', 'Authorized Service Providers']
     .some((t) => text.includes(t)));
@@ -147,7 +147,6 @@ if (frame) {
     ['Preventive Maintenance', /Maintenance schedule/],
     ['Annual Training LTR', /Annual training letters/],
     ['Schoolhouse Locations', /Check-in/i],
-    ['Travel Restrictions', /Current restrictions/],
     ['External Training: WPT', /Vendor and workplace courses/],
   ];
   let mounted = 0;
@@ -179,6 +178,17 @@ if (frame) {
   check('the letter carries the by-name sheet, schedule, and notices',
     /confirmation sheet/i.test(seen[0]) && /Convening calendar/i.test(seen[1])
       && /instructor notice/i.test(seen[2]) && /Propose seats/i.test(seen[3]));
+
+  // Travel restrictions moved inside the schoolhouse tile, since somebody
+  // reading a check-in procedure is planning a trip.
+  await frame.getByRole('button', { name: /All modules/ }).click();
+  await page.waitForTimeout(400);
+  await frame.getByRole('button', { name: /Schoolhouse Locations/ }).first().click();
+  await page.waitForTimeout(700);
+  await frame.getByRole('button', { name: /^Travel restrictions/ }).click();
+  await page.waitForTimeout(600);
+  check('schoolhouses carry the travel restrictions',
+    /Current restrictions/i.test(await frame.locator('body').innerText()));
 
   check('nothing says programme', !/programme/i.test(await frame.locator('body').innerText()));
 }

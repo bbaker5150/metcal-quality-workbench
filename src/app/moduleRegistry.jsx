@@ -105,17 +105,10 @@ const modules = [
   },
   {
     id: 'schoolhouses', route: 'schoolhouses', category: 'Training',
-    title: 'Schoolhouse Locations', subtitle: 'Check-in procedures',
-    blurb: 'Where each course convenes, what a student needs at the gate, and the parking and lodging notes that go with it.',
+    title: 'Schoolhouse Locations', subtitle: 'Check-in and travel restrictions',
+    blurb: 'Where each course convenes and what a student needs at the gate — parking, lodging, and point of contact — alongside the travel restrictions that decide whether the trip can be made at all.',
     icon: MapPin, accent: 'brass',
     Component: lazy(() => import('../modules/training/SchoolhouseModule.jsx')),
-  },
-  {
-    id: 'travel', route: 'travel', category: 'Training',
-    title: 'Travel Restrictions', subtitle: 'What needs approval, and from whom',
-    blurb: 'Current restrictions on TAD travel, vendor courses, conferences, and OCONUS, with the authority behind each.',
-    icon: PlaneTakeoff, accent: 'signal',
-    Component: lazy(() => import('../modules/training/TravelModule.jsx')),
   },
   {
     id: 'wpt', route: 'wpt', category: 'Training',
