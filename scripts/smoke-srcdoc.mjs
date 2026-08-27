@@ -69,9 +69,12 @@ check('nothing in the file can be mistaken for markup', safe, problem);
 check('manifest is the first line', appHtml.startsWith('<!--WFC-MANIFEST:'));
 check('runs inside an about:srcdoc frame', !!frame);
 check('zero failed subresource requests', failures.length === 0, failures.slice(0, 3).join(' | '));
-check('launcher rendered', /Quality & Training Program/.test(text));
-check('all three modules listed', ['Round-Robin Proficiency Tests', 'Schedule Auditor', 'Training Library']
-  .every((t) => text.includes(t)));
+check('launcher rendered', /Quality & Training Portal/.test(text));
+check('both categories and their modules listed',
+  ['Quality', 'Training', 'PT Program', 'Audit Schedule', 'Scopes of Competency',
+   'Loss of Capability', 'Preventive Maintenance', 'Annual Training LTR',
+   'By Name Confirmation Sheet', 'Schoolhouse Locations', 'Travel Restrictions',
+   'External Training: WPT', 'Training Resource Library'].every((t) => text.includes(t)));
 check('fell back to mock data when the lists 404', /Mock data/.test(text));
 
 if (frame) {
@@ -84,19 +87,19 @@ if (frame) {
   check('every image embedded and decoded', images.length > 0 && images.every((i) => i.embedded && i.decoded),
     `(${images.length} images)`);
 
-  // RRPT — the tracker is the landing tab, so custody must be on screen.
-  await frame.getByRole('button', { name: /Round-Robin Proficiency Tests/ }).first().click();
+  // PT Program — the tracker is the landing tab, so custody must be on screen.
+  await frame.getByRole('button', { name: /^PT Program/ }).first().click();
   await page.waitForTimeout(900);
   const rrpt = await frame.locator('body').innerText();
   check('routing into a module works', /Current custody/.test(rrpt));
   check('tracker answers both of its questions',
     /Current custody/.test(rrpt) && /Scheduled to receive/.test(rrpt));
 
-  // The SPC tab renders charts through recharts, which needs a real layout
-  // pass — a zero-height container silently draws nothing, and that is
-  // exactly the failure a DOM-only test cannot see.
-  await frame.getByRole('button', { name: /Live SPC/ }).click();
-  await page.waitForTimeout(1200);
+  // SPC charts live with the results now. Recharts needs a real layout pass —
+  // a zero-height container silently draws nothing, and that is exactly the
+  // failure a DOM-only test cannot see.
+  await frame.getByRole('button', { name: /^Results$/ }).click();
+  await page.waitForTimeout(1400);
   const svgs = await frame.evaluate(() =>
     [...document.querySelectorAll('svg.recharts-surface')]
       .map((el) => ({ w: el.clientWidth, h: el.clientHeight, dots: el.querySelectorAll('circle').length })));
@@ -104,15 +107,24 @@ if (frame) {
     svgs.length > 0 && svgs.every((c) => c.w > 100 && c.h > 80 && c.dots > 0),
     `(${svgs.length} charts)`);
 
-  await frame.getByRole('button', { name: /Results/ }).click();
-  await page.waitForTimeout(700);
   const results = await frame.locator('body').innerText();
   check('QA engine evaluated the seed data', /EVALUATE/.test(results) && /FAIL/.test(results));
+
+  // Reports are the new heart of the module: an interim and a final, scored
+  // against the reference lab's opening measurement, with a drift figure.
+  await frame.getByRole('button', { name: /^Reports$/ }).click();
+  await page.waitForTimeout(900);
+  const reports = await frame.locator('body').innerText();
+  check('interim and final reports both render',
+    /Interim report/.test(reports) && /Final report/.test(reports));
+  check('reports show reference, closing, and drift',
+    /Reference value/i.test(reports) && /Closing measurement/i.test(reports) && /Artifact drift/i.test(reports));
+  check('a failed lab is raised for corrective action', /Corrective action required/.test(reports));
 
   // Training Library — the filter chips are the whole interaction.
   await frame.getByRole('button', { name: /All modules/ }).click();
   await page.waitForTimeout(600);
-  await frame.getByRole('button', { name: /Training Library/ }).first().click();
+  await frame.getByRole('button', { name: /Training Resource Library/ }).first().click();
   await page.waitForTimeout(900);
   const beforeFilter = await frame.locator('body').innerText();
   await frame.getByRole('button', { name: /^Microwave/ }).click();
@@ -121,6 +133,37 @@ if (frame) {
   check('library filters down to one measurement area',
     /Electrical/.test(beforeFilter) && !/Deadweight Tester Operation/.test(afterFilter)
       && /Coaxial Connector Care/.test(afterFilter));
+
+  // Every module must at least mount. A lazy chunk that throws only shows up
+  // when somebody opens that one tile, which in a demo is the worst moment.
+  const routes = [
+    ['Dashboard Metrics', /Where the programme stands|Where the pipeline stands/i],
+    ['Audit Schedule', /Lab audit calendar/],
+    ['Scopes of Competency', /Scope of competency/],
+    ['Loss of Capability', /Currently down/],
+    ['Preventive Maintenance', /Maintenance schedule/],
+    ['Cross-Check Procedures', /Procedures/],
+    ['In-Service Check Procedures', /Procedures/],
+    ['Authorized Service Providers', /Authorized list/],
+    ['Annual Training LTR', /Annual training letters/],
+    ['By Name Confirmation Sheet', /confirmation sheet/i],
+    ['Schedule \\(02\\)', /Convening calendar/],
+    ['Schoolhouse Locations', /Check-in/i],
+    ['Travel Restrictions', /Current restrictions/],
+    ['External Training: WPT', /Vendor and workplace courses/],
+  ];
+  let mounted = 0;
+  const brokeOn = [];
+  for (const [name, expected] of routes) {
+    await frame.getByRole('button', { name: /All modules/ }).click();
+    await page.waitForTimeout(350);
+    await frame.getByRole('button', { name: new RegExp(name) }).first().click();
+    await page.waitForTimeout(650);
+    const body = await frame.locator('body').innerText();
+    if (expected.test(body)) mounted += 1; else brokeOn.push(name);
+  }
+  check('every module mounts and renders its own content',
+    brokeOn.length === 0, `(${mounted}/${routes.length})${brokeOn.length ? ' failed: ' + brokeOn.join(', ') : ''}`);
 }
 
 if (frame) {

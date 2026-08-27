@@ -81,3 +81,92 @@ export function environmentCheck({ tempF, humidityRH }) {
   }
   return { ok: problems.length === 0, problems };
 }
+
+// ---------------------------------------------------------------------------
+// Round reporting: interim while the artifact is still travelling, final once
+// it is home.
+// ---------------------------------------------------------------------------
+// The reference lab measures the artifact before it leaves (Opening) and again
+// when it returns (Closing). Participants are scored against the *opening*
+// measurement rather than a value written down once in the artifact record —
+// a reference value has a date, and the one that matters is the one taken
+// immediately before this round.
+//
+// The closing measurement is what makes the final report worth more than the
+// interim: it says whether the artifact was the same instrument at the end as
+// at the start. If it drifted, every participant was scored against a moving
+// reference, and the round needs judgement rather than arithmetic. That is
+// reported, never silently corrected.
+
+/** Drift beyond this fraction of sigma_pt makes the round's results advisory. */
+export const DRIFT_LIMIT_RATIO = 1;
+
+/**
+ * Evaluate one artifact's round.
+ *
+ * @param {object} artifact  needs RequiredAccuracy, and ReferenceValue as a fallback
+ * @param {Array}  results   every PT result for the artifact, any role
+ * @param {number} expectedParticipants  how many labs the round is scheduled for
+ */
+export function ptRound({ artifact, results = [], expectedParticipants = 0 }) {
+  const sigma = sigmaPt(artifact?.RequiredAccuracy);
+  const roleOf = (role) => results.filter((r) => r.MeasurementRole === role);
+
+  const opening = roleOf('Opening')[0] || null;
+  const closing = roleOf('Closing')[0] || null;
+  const participants = roleOf('Participant')
+    .slice()
+    .sort((a, b) => String(a.StartDate).localeCompare(String(b.StartDate)));
+
+  // Prefer the opening measurement; fall back to the recorded reference value
+  // so a round that has not opened yet still renders something honest.
+  const referenceValue = opening ? mean(opening.runs) : artifact?.ReferenceValue ?? null;
+  const referenceFrom = opening ? 'opening measurement' : 'artifact record';
+
+  const scored = participants.map((row) => {
+    const average = mean(row.runs);
+    const z = zScore({ average, referenceValue, requiredAccuracy: artifact?.RequiredAccuracy });
+    return {
+      ...row,
+      average,
+      stdDev: sampleStdDev(row.runs),
+      z,
+      status: evaluationTier(z),
+    };
+  });
+
+  const closingAverage = closing ? mean(closing.runs) : null;
+  const drift = closingAverage != null && referenceValue != null
+    ? closingAverage - referenceValue
+    : null;
+  const driftRatio = drift != null && sigma ? Math.abs(drift) / sigma : null;
+  const driftExceeded = driftRatio != null && driftRatio > DRIFT_LIMIT_RATIO;
+
+  const complete = Boolean(closing)
+    && expectedParticipants > 0
+    && scored.length >= expectedParticipants;
+
+  let phase = 'Not started';
+  if (opening && scored.length === 0) phase = 'Open';
+  else if (scored.length > 0) phase = complete ? 'Final' : 'Interim';
+
+  return {
+    phase,
+    sigma,
+    referenceValue,
+    referenceFrom,
+    opening,
+    closing,
+    closingAverage,
+    drift,
+    driftRatio,
+    driftExceeded,
+    participants: scored,
+    completed: scored.length,
+    expectedParticipants,
+    remaining: Math.max(0, expectedParticipants - scored.length),
+    // Anything not PASS needs the lab told; FAIL needs corrective action opened.
+    failures: scored.filter((p) => p.status === 'FAIL'),
+    watch: scored.filter((p) => p.status === 'EVALUATE'),
+  };
+}

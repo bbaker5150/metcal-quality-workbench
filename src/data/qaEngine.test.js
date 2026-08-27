@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
-  mean, sampleStdDev, sigmaPt, zScore, evaluationTier, evaluate, environmentCheck,
+  mean, sampleStdDev, sigmaPt, zScore, evaluationTier, evaluate, environmentCheck, ptRound,
 } from './qaEngine.js';
 import seed from './seedData.js';
-import { CONTAINERS, listTitle } from './listSchema.js';
+import { CONTAINERS, listTitle, REFERENCE_LAB, SITES } from './listSchema.js';
 import modules from '../app/moduleRegistry.jsx';
 
 describe('sigmaPt', () => {
@@ -141,10 +141,11 @@ describe('the seeded dataset', () => {
       ...seed.auditors.map((a) => a.AuditorName),
       ...seed.ptResults.map((r) => r.MetrologistName),
       ...seed.labAudits.map((l) => l.AssignedAuditor),
+      ...seed.enrollments.map((e) => e.Person),
     ];
     expect(names.length).toBeGreaterThan(0);
     for (const name of names) {
-      expect(name).toMatch(/^(Auditor|Metrologist) /);
+      expect(name).toMatch(/^(Auditor|Metrologist|Technician) /);
     }
   });
 
@@ -233,5 +234,173 @@ describe('the list schema', () => {
     expect(listTitle('METCAL', 'labAudits')).toBe('METCALLabAudits');
     expect(listTitle('', 'rotation')).toBe('METCALRotation');
     expect(() => listTitle('METCAL', 'nope')).toThrow(/Unknown container/);
+  });
+});
+
+describe('round reporting', () => {
+  const artifact = { RequiredAccuracy: 0.4, ReferenceValue: 10000.31, Unit: 'Ω' };
+  const opening = { Id: 1, MeasurementRole: 'Opening', LabCode: 'PRL', StartDate: '2026-02-16', runs: [10000.30, 10000.32] };
+  const p1 = { Id: 2, MeasurementRole: 'Participant', LabCode: 'JFB', StartDate: '2026-03-09', runs: [9999.65, 9999.65] };
+  const p2 = { Id: 3, MeasurementRole: 'Participant', LabCode: 'SDP', StartDate: '2026-08-07', runs: [10000.30, 10000.30] };
+  const closing = { Id: 4, MeasurementRole: 'Closing', LabCode: 'PRL', StartDate: '2026-08-20', runs: [10000.318, 10000.318] };
+
+  it('is interim while labs are still outstanding', () => {
+    const r = ptRound({ artifact, results: [opening, p1], expectedParticipants: 2 });
+    expect(r.phase).toBe('Interim');
+    expect(r.remaining).toBe(1);
+  });
+
+  it('is final only once the closing measurement is in AND every lab reported', () => {
+    expect(ptRound({ artifact, results: [opening, p1, p2], expectedParticipants: 2 }).phase).toBe('Interim');
+    expect(ptRound({ artifact, results: [opening, p1, closing], expectedParticipants: 2 }).phase).toBe('Interim');
+    expect(ptRound({ artifact, results: [opening, p1, p2, closing], expectedParticipants: 2 }).phase).toBe('Final');
+  });
+
+  it('scores participants against the opening measurement, not the stored value', () => {
+    // The stored ReferenceValue is 10000.31; this opening reads 10000.50, and
+    // a lab landing on 10000.50 must score zero rather than being penalised
+    // against a number taken at some other time.
+    const drifted = { ...opening, runs: [10000.50, 10000.50] };
+    const lab = { Id: 9, MeasurementRole: 'Participant', LabCode: 'SDB', StartDate: '2026-04-01', runs: [10000.50, 10000.50] };
+    const r = ptRound({ artifact, results: [drifted, lab], expectedParticipants: 1 });
+    expect(r.referenceValue).toBeCloseTo(10000.50, 9);
+    expect(r.referenceFrom).toBe('opening measurement');
+    expect(r.participants[0].z).toBeCloseTo(0, 9);
+  });
+
+  it('falls back to the artifact record when the round has not opened', () => {
+    const r = ptRound({ artifact, results: [], expectedParticipants: 3 });
+    expect(r.phase).toBe('Not started');
+    expect(r.referenceValue).toBe(10000.31);
+    expect(r.referenceFrom).toBe('artifact record');
+  });
+
+  it('reports drift rather than correcting for it', () => {
+    const r = ptRound({ artifact, results: [opening, p1, p2, closing], expectedParticipants: 2 });
+    expect(r.drift).toBeCloseTo(0.008, 6);
+    expect(r.driftExceeded).toBe(false);
+    // The participant verdicts are untouched by the drift figure.
+    expect(r.participants.map((x) => x.status)).toEqual(['FAIL', 'PASS']);
+  });
+
+  it('flags a round whose artifact moved more than sigma_pt', () => {
+    const far = { ...closing, runs: [10000.55, 10000.55] };
+    const r = ptRound({ artifact, results: [opening, p1, p2, far], expectedParticipants: 2 });
+    expect(r.driftExceeded).toBe(true);
+  });
+
+  it('separates failures from the ones merely worth watching', () => {
+    const watch = { Id: 8, MeasurementRole: 'Participant', LabCode: 'CPB', StartDate: '2026-05-11', runs: [10000.78, 10000.78] };
+    const r = ptRound({ artifact, results: [opening, p1, watch], expectedParticipants: 3 });
+    expect(r.failures.map((f) => f.LabCode)).toEqual(['JFB']);
+    expect(r.watch.map((f) => f.LabCode)).toEqual(['CPB']);
+  });
+
+  it('orders participants by when they measured, not by how they were entered', () => {
+    const r = ptRound({ artifact, results: [opening, p2, p1], expectedParticipants: 2 });
+    expect(r.participants.map((p) => p.LabCode)).toEqual(['JFB', 'SDP']);
+  });
+});
+
+describe('the seeded round data', () => {
+  const roundFor = (artifactId) => {
+    const artifact = seed.artifacts.find((a) => a.Id === artifactId);
+    const results = seed.ptResults.filter((r) => r.ArtifactId === artifactId);
+    const expected = new Set(
+      seed.rotation.filter((l) => l.ArtifactId === artifactId && l.Site !== REFERENCE_LAB).map((l) => l.Site),
+    ).size;
+    return ptRound({ artifact, results, expectedParticipants: expected });
+  };
+
+  it('has at least one final report and one interim, so both can be demonstrated', () => {
+    const phases = seed.artifacts.map((a) => roundFor(a.Id).phase);
+    expect(phases).toContain('Final');
+    expect(phases).toContain('Interim');
+  });
+
+  it('opens every round before any participant measures', () => {
+    for (const artifact of seed.artifacts) {
+      const results = seed.ptResults.filter((r) => r.ArtifactId === artifact.Id);
+      const opening = results.find((r) => r.MeasurementRole === 'Opening');
+      if (!opening) continue;
+      for (const p of results.filter((r) => r.MeasurementRole === 'Participant')) {
+        expect({ artifact: artifact.Model, lab: p.LabCode, after: p.StartDate > opening.StartDate })
+          .toEqual({ artifact: artifact.Model, lab: p.LabCode, after: true });
+      }
+    }
+  });
+
+  it('only lets the reference lab take opening and closing measurements', () => {
+    for (const row of seed.ptResults) {
+      if (row.MeasurementRole === 'Participant') continue;
+      expect({ role: row.MeasurementRole, lab: row.LabCode })
+        .toEqual({ role: row.MeasurementRole, lab: REFERENCE_LAB });
+    }
+  });
+
+  it('gives every result a role, since the reports read it', () => {
+    for (const row of seed.ptResults) {
+      expect(['Opening', 'Participant', 'Closing']).toContain(row.MeasurementRole);
+    }
+  });
+
+  it('produces a failure somewhere, so corrective action has something to show', () => {
+    const failures = seed.artifacts.flatMap((a) => roundFor(a.Id).failures);
+    expect(failures.length).toBeGreaterThan(0);
+  });
+});
+
+describe('the expanded seed', () => {
+  it('references only known sites', () => {
+    const known = new Set(SITES);
+    for (const row of [...seed.capabilityLoss, ...seed.pmSchedule, ...seed.scopes, ...seed.enrollments]) {
+      expect({ site: row.Site, known: known.has(row.Site) }).toEqual({ site: row.Site, known: true });
+    }
+  });
+
+  it('enrolls people only on courses that exist', () => {
+    const codes = new Set(seed.courses.map((c) => c.CourseCode));
+    for (const e of seed.enrollments) {
+      expect({ course: e.CourseCode, known: codes.has(e.CourseCode) }).toEqual({ course: e.CourseCode, known: true });
+    }
+  });
+
+  it('sends every course to a schoolhouse that exists', () => {
+    const houses = new Set(seed.schoolhouses.map((h) => h.Name));
+    for (const c of seed.courses) {
+      expect({ course: c.CourseCode, known: houses.has(c.Schoolhouse) }).toEqual({ course: c.CourseCode, known: true });
+    }
+  });
+
+  it('never marks a seat notified before it was confirmed', () => {
+    for (const e of seed.enrollments) {
+      if (!e.InstructorNotified) continue;
+      expect({ id: e.Id, confirmedFirst: Boolean(e.Confirmed) && e.NotifiedOn >= e.ConfirmedOn })
+        .toEqual({ id: e.Id, confirmedFirst: true });
+    }
+  });
+
+  it('leaves something for each dashboard to surface', () => {
+    // A dashboard whose every count is zero demonstrates nothing.
+    expect(seed.capabilityLoss.filter((l) => !l.RestoredDate).length).toBeGreaterThan(0);
+    expect(seed.labAudits.filter((l) => l.AuditStatus === 'Overdue').length).toBeGreaterThan(0);
+    expect(seed.enrollments.filter((e) => e.Confirmed && !e.InstructorNotified).length).toBeGreaterThan(0);
+    expect(seed.enrollments.filter((e) => !e.Confirmed).length).toBeGreaterThan(0);
+  });
+
+  it('has an overdue PM on both a calendar and an hours basis', () => {
+    const hours = seed.pmSchedule.filter((r) => r.Basis === 'Hours' && r.HoursRun >= r.HoursThreshold);
+    const calendar = seed.pmSchedule.filter((r) => r.Basis === 'Calendar' && r.NextDue && r.NextDue < '2026-08-26');
+    expect(hours.length).toBeGreaterThan(0);
+    expect(calendar.length).toBeGreaterThan(0);
+  });
+
+  it('carries no Office SafeLinks wrapper, which would leak an address', () => {
+    // The links arrived wrapped by Office 365 ATP, and those wrappers embed the
+    // sender's email and tenant id in the query string. This repository is
+    // public; the bare destination is what belongs here.
+    const json = JSON.stringify(seed);
+    expect(json).not.toMatch(/safelinks\.protection/i);
+    expect(json).not.toMatch(/@us\.navy\.mil/i);
   });
 });

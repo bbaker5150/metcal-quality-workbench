@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Library, Search, ExternalLink, FileText } from 'lucide-react';
+import { Library, Search, ExternalLink, FileText, Link2 } from 'lucide-react';
 import { Panel, PanelHeader, Badge, FilterChips, EmptyState } from '../../shared/ui.jsx';
 import ModulePage from '../../shared/ModulePage.jsx';
 import { moduleByRoute } from '../../app/moduleRegistry.jsx';
@@ -91,6 +91,8 @@ export default function LibraryModule() {
         </div>
       </Panel>
 
+      <Refs items={data.trainingRefs || []} />
+
       <p className="muted mb-4 text-[0.8rem]">
         {matches.length} of {docs.length} document{docs.length === 1 ? '' : 's'}
       </p>
@@ -151,5 +153,46 @@ export default function LibraryModule() {
         ))
       )}
     </ModulePage>
+  );
+}
+
+// CANTRAC and the programme references sit above the document library rather
+// than inside it: they are where you go to find out what exists, not documents
+// filed by measurement area.
+function Refs({ items }) {
+  if (items.length === 0) return null;
+  const links = items.filter((i) => i.Category === 'Link');
+  const refs = items.filter((i) => i.Category !== 'Link');
+  return (
+    <Panel className="mb-5">
+      <PanelHeader title="Links and references" subtitle="CANTRAC, MEASURE, and the programme references" icon={Link2} />
+      <ul className="divide-y divide-[var(--border-subtle)]">
+        {[...links, ...refs].map((item) => (
+          <li key={item.Id} className="flex items-center gap-4 px-5 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-2.5">
+                <h3 className="text-[0.85rem] font-medium">{item.Title}</h3>
+                <Badge tone={item.Category === 'Link' ? 'signal' : 'neutral'}>{item.Category}</Badge>
+              </div>
+              <p className="muted mt-0.5 text-[0.79rem] leading-relaxed">{item.Summary}</p>
+            </div>
+            <span className="shrink-0">
+              {item.Url ? (
+                <a
+                  href={item.Url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[0.78rem] font-medium text-signal-600 hover:underline dark:text-signal-400"
+                >
+                  Open <ExternalLink size={12} />
+                </a>
+              ) : (
+                <span className="muted text-[0.74rem]">Not linked</span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   );
 }

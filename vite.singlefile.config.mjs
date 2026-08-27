@@ -52,7 +52,7 @@ export default defineConfig({
         bundle[OUTPUT] = entry;
       },
     },
-    forgeRuntime({ project: 'METCAL Quality', build: buildStamp(), globalName: '__METCAL_BUILD__' }),
+    forgeRuntime({ project: 'NAVAIR METCAL Quality and Training Portal', build: buildStamp(), globalName: '__METCAL_BUILD__' }),
   ],
   build: {
     outDir: 'build-singlefile',

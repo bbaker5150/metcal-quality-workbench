@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import {
   Activity, AlertTriangle, MapPin, Truck, CalendarClock, CheckCircle2,
-  FileText, Upload, Download, ArrowRight,
+  FileText, Upload, Download, ArrowRight, Boxes, FileBarChart, BookOpen,
+  ExternalLink, Bell, FlaskConical,
 } from 'lucide-react';
 import { Panel, PanelHeader, Badge, Button, Stat, FilterChips, EmptyState } from '../../shared/ui.jsx';
 import ModulePage, { Table } from '../../shared/ModulePage.jsx';
 import { moduleByRoute } from '../../app/moduleRegistry.jsx';
 import { useData } from '../../data/DataProvider.jsx';
-import { MEASUREMENT_AREAS, SITES } from '../../data/listSchema.js';
+import { MEASUREMENT_AREAS, SITES, REFERENCE_LAB } from '../../data/listSchema.js';
+import { ptRound } from '../../data/qaEngine.js';
 import SpcChart from './SpcChart.jsx';
 
 const TIER_TONE = { PASS: 'pass', EVALUATE: 'evaluate', FAIL: 'fail' };
@@ -31,12 +33,14 @@ const digitsFor = (unit) => (unit === 'V' || unit === 'in' ? 7 : unit === '°C' 
 
 const TABS = [
   { key: 'tracker', label: 'Tracker' },
-  { key: 'spc', label: 'Live SPC' },
+  { key: 'inventory', label: 'Inventory' },
+  { key: 'submit', label: 'Instructions & data sheets' },
   { key: 'results', label: 'Results' },
-  { key: 'submit', label: 'Instructions & submission' },
+  { key: 'reports', label: 'Reports' },
+  { key: 'manual', label: 'Process manual' },
 ];
 
-export default function RrptModule() {
+export default function PtModule() {
   const { data } = useData();
   const [tab, setTab] = useState('tracker');
   const [area, setArea] = useState('');
@@ -63,7 +67,7 @@ export default function RrptModule() {
   const upcoming = rotation.filter((r) => r.Status === 'Scheduled' && inArea(r.ArtifactId));
 
   return (
-    <ModulePage module={moduleByRoute('rrpt')}>
+    <ModulePage module={moduleByRoute('pt')}>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <nav className="hairline inline-flex rounded-lg border p-0.5" aria-label="RRPT views">
           {TABS.map((t) => (
@@ -97,12 +101,22 @@ export default function RrptModule() {
           artifactById={artifactById}
         />
       )}
-      {tab === 'spc' && <Spc artifacts={artifacts.filter((a) => !area || a.MeasurementArea === area)} results={results} />}
-      {tab === 'results' && (
-        <Results
-          results={results.filter((r) => inArea(r.ArtifactId))}
-          artifactById={artifactById}
+      {tab === 'inventory' && <Inventory artifacts={artifacts.filter((a) => !area || a.MeasurementArea === area)} rotation={rotation} results={results} />}
+      {tab === 'reports' && (
+        <Reports
+          artifacts={artifacts.filter((a) => !area || a.MeasurementArea === area)}
+          results={results}
+          rotation={rotation}
         />
+      )}
+      {tab === 'manual' && <Manual procedures={data.procedures || []} />}
+      {tab === 'results' && (
+        <>
+          <Spc artifacts={artifacts.filter((a) => !area || a.MeasurementArea === area)} results={results} />
+          <div className="mt-5">
+            <Results results={results.filter((r) => inArea(r.ArtifactId))} artifactById={artifactById} />
+          </div>
+        </>
       )}
       {tab === 'submit' && (
         <Submission
@@ -398,5 +412,251 @@ function Submission({ artifacts, results }) {
         </Table>
       </Panel>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Artifact inventory
+// ---------------------------------------------------------------------------
+
+function Inventory({ artifacts, rotation, results }) {
+  return (
+    <Panel>
+      <PanelHeader
+        title="PT artifact inventory"
+        subtitle="Every artifact in the programme, with where it is and how far its round has got"
+        icon={Boxes}
+      />
+      {artifacts.length === 0 ? (
+        <EmptyState>No artifacts in this measurement area.</EmptyState>
+      ) : (
+        <Table head={['Model', 'S/N', 'Area', 'Nominal', 'Required accuracy', 'Reference value', 'Held by', 'Results in']}>
+          {artifacts.map((a) => {
+            const here = rotation.find((l) => l.ArtifactId === a.Id && (l.Status === 'At-Lab' || l.Status === 'In-Transit'));
+            const count = results.filter((r) => r.ArtifactId === a.Id && r.MeasurementRole === 'Participant').length;
+            const digits = digitsFor(a.Unit);
+            return (
+              <tr key={a.Id} className="hover:bg-ink-500/[0.03]">
+                <td className="px-5 py-2.5 font-mono text-[0.76rem] font-medium">{a.Model}</td>
+                <td className="muted px-5 py-2.5 font-mono text-[0.74rem]">{a.SerialNumber}</td>
+                <td className="muted px-5 py-2.5">{a.MeasurementArea}</td>
+                <td className="tnum px-5 py-2.5">{a.NominalValue} <span className="muted">{a.Unit}</span></td>
+                <td className="tnum px-5 py-2.5">{a.RequiredAccuracy} <span className="muted">{a.Unit}</span></td>
+                <td className="tnum px-5 py-2.5">{a.ReferenceValue?.toFixed(digits)}</td>
+                <td className="px-5 py-2.5">
+                  {here ? (
+                    <Badge tone={LEG_TONE[here.Status]}>{here.Site}</Badge>
+                  ) : (
+                    <span className="muted text-[0.76rem]">not dispatched</span>
+                  )}
+                </td>
+                <td className="tnum px-5 py-2.5">{count || <span className="muted">—</span>}</td>
+              </tr>
+            );
+          })}
+        </Table>
+      )}
+    </Panel>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Interim and final reports
+// ---------------------------------------------------------------------------
+// The reference lab measures the artifact before it leaves and again when it
+// returns. Participants are scored against the *opening* measurement, not a
+// value written into the artifact record once — a reference value has a date,
+// and the one that matters is the one taken immediately before this round.
+//
+// The closing measurement is what makes a final report worth more than an
+// interim: it says whether the artifact was the same instrument at the end as
+// at the start. Drift is reported, never silently corrected, because a round
+// measured against a moving reference needs judgement rather than arithmetic.
+
+const PHASE_TONE = { Final: 'pass', Interim: 'signal', Open: 'neutral', 'Not started': 'neutral' };
+
+function Reports({ artifacts, results, rotation }) {
+  const rounds = artifacts.map((artifact) => {
+    const mine = results.filter((r) => r.ArtifactId === artifact.Id);
+    const expected = new Set(
+      rotation.filter((l) => l.ArtifactId === artifact.Id && l.Site !== REFERENCE_LAB).map((l) => l.Site),
+    ).size;
+    return { artifact, round: ptRound({ artifact, results: mine, expectedParticipants: expected }) };
+  }).filter(({ round }) => round.phase === 'Interim' || round.phase === 'Final');
+
+  if (rounds.length === 0) {
+    return (
+      <Panel>
+        <EmptyState>
+          No round in this area has an opening measurement and at least one participant yet, which is
+          the least a report can be built from.
+        </EmptyState>
+      </Panel>
+    );
+  }
+
+  const allFailures = rounds.flatMap(({ artifact, round }) =>
+    round.failures.map((f) => ({ artifact, f, referenceValue: round.referenceValue })));
+
+  return (
+    <>
+      {allFailures.length > 0 && (
+        <Panel className="mb-5">
+          <PanelHeader
+            title="Corrective action required"
+            subtitle="A failed result is notified as soon as it is evaluated, not when the round closes"
+            icon={Bell}
+            actions={<Badge tone="fail">{allFailures.length} to notify</Badge>}
+          />
+          <Table head={['Lab', 'Artifact', 'z', 'Measured', 'Reference', 'Action']}>
+            {allFailures.map(({ artifact, f, referenceValue }) => {
+              const digits = digitsFor(artifact.Unit);
+              return (
+                <tr key={`${artifact.Id}:${f.LabCode}`} className="hover:bg-ink-500/[0.03]">
+                  <td className="px-5 py-2.5 font-semibold">{f.LabCode}</td>
+                  <td className="px-5 py-2.5 font-mono text-[0.76rem]">{artifact.Model}</td>
+                  <td className="tnum px-5 py-2.5 font-medium text-fail-600 dark:text-fail-400">{f.z.toFixed(2)}</td>
+                  <td className="tnum px-5 py-2.5">{f.average?.toFixed(digits)}</td>
+                  <td className="muted tnum px-5 py-2.5">{referenceValue?.toFixed(digits)}</td>
+                  <td className="px-5 py-2.5">
+                    <Button variant="ghost" disabled title="Notifies the lab through the site's mail connector">
+                      Notify lab
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
+          </Table>
+        </Panel>
+      )}
+
+      <div className="space-y-5">
+        {rounds.map(({ artifact, round }) => {
+          const digits = digitsFor(artifact.Unit);
+          return (
+            <Panel key={artifact.Id}>
+              <PanelHeader
+                title={`${round.phase} report — ${artifact.Model} · ${artifact.SerialNumber}`}
+                subtitle={
+                  round.phase === 'Final'
+                    ? `All ${round.expectedParticipants} laboratories reported, closing measurement taken`
+                    : `${round.completed} of ${round.expectedParticipants} laboratories reported · ${round.remaining} outstanding`
+                }
+                icon={FileBarChart}
+                actions={<Badge tone={PHASE_TONE[round.phase]}>{round.phase}</Badge>}
+              />
+
+              <div className="grid gap-px border-b hairline bg-[var(--border-subtle)] sm:grid-cols-3">
+                <div className="bg-[var(--surface-raised)] px-5 py-3">
+                  <p className="muted text-[0.7rem] font-medium uppercase tracking-[0.1em]">Reference value</p>
+                  <p className="tnum mt-1 text-[0.95rem] font-semibold">
+                    {round.referenceValue?.toFixed(digits)} <span className="muted text-[0.8rem] font-normal">{artifact.Unit}</span>
+                  </p>
+                  <p className="muted mt-0.5 text-[0.73rem]">
+                    From the {round.referenceFrom}{round.opening ? ` · ${round.opening.StartDate}` : ''}
+                  </p>
+                </div>
+                <div className="bg-[var(--surface-raised)] px-5 py-3">
+                  <p className="muted text-[0.7rem] font-medium uppercase tracking-[0.1em]">Closing measurement</p>
+                  {round.closing ? (
+                    <>
+                      <p className="tnum mt-1 text-[0.95rem] font-semibold">{round.closingAverage?.toFixed(digits)}</p>
+                      <p className="muted mt-0.5 text-[0.73rem]">{round.closing.StartDate} · {REFERENCE_LAB}</p>
+                    </>
+                  ) : (
+                    <p className="muted mt-1 text-[0.85rem]">Not yet taken</p>
+                  )}
+                </div>
+                <div className="bg-[var(--surface-raised)] px-5 py-3">
+                  <p className="muted text-[0.7rem] font-medium uppercase tracking-[0.1em]">Artifact drift</p>
+                  {round.drift != null ? (
+                    <>
+                      <p className={`tnum mt-1 text-[0.95rem] font-semibold ${round.driftExceeded ? 'text-fail-600 dark:text-fail-400' : ''}`}>
+                        {round.drift > 0 ? '+' : ''}{round.drift.toFixed(digits)}
+                      </p>
+                      <p className="muted mt-0.5 text-[0.73rem]">
+                        {round.driftRatio?.toFixed(2)} σ<sub>pt</sub> — {round.driftExceeded ? 'results are advisory' : 'within tolerance'}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="muted mt-1 text-[0.85rem]">Pending the closing measurement</p>
+                  )}
+                </div>
+              </div>
+
+              <Table head={['Lab', 'Measured', 's', 'z', 'Evaluation', 'Date']}>
+                {round.participants.map((p) => (
+                  <tr key={p.Id} className="hover:bg-ink-500/[0.03]">
+                    <td className="px-5 py-2.5 font-semibold">{p.LabCode}</td>
+                    <td className="tnum px-5 py-2.5">{p.average?.toFixed(digits)}</td>
+                    <td className="muted tnum px-5 py-2.5">{p.stdDev?.toPrecision(2)}</td>
+                    <td className="tnum px-5 py-2.5 font-medium">{p.z?.toFixed(2)}</td>
+                    <td className="px-5 py-2.5"><Badge tone={TIER_TONE[p.status]}>{p.status}</Badge></td>
+                    <td className="muted tnum px-5 py-2.5">{p.StartDate}</td>
+                  </tr>
+                ))}
+              </Table>
+
+              {round.phase === 'Interim' && (
+                <p className="muted border-t hairline px-5 py-3 text-[0.74rem] leading-relaxed">
+                  Interim: scored against the opening measurement while the artifact is still
+                  circulating. These verdicts can change if the closing measurement shows the
+                  artifact drifted, which is exactly what the final report is for.
+                </p>
+              )}
+            </Panel>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Process manual
+// ---------------------------------------------------------------------------
+
+function Manual({ procedures }) {
+  const items = procedures.filter((p) => p.Category === 'PT Manual');
+  return (
+    <Panel>
+      <PanelHeader
+        title="PT programme process manual"
+        subtitle="The quality manual governing the round-robin, and the standard it is written against"
+        icon={BookOpen}
+      />
+      {items.length === 0 ? (
+        <EmptyState>No manual filed.</EmptyState>
+      ) : (
+        <ul className="divide-y divide-[var(--border-subtle)]">
+          {items.map((item) => (
+            <li key={item.Id} className="flex gap-4 px-5 py-4">
+              <span className="muted mt-0.5 shrink-0"><FlaskConical size={16} strokeWidth={1.75} /></span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                  <h3 className="text-[0.87rem] font-medium">{item.Title}</h3>
+                  {item.DocNumber && <Badge tone="neutral">{item.DocNumber}</Badge>}
+                </div>
+                <p className="muted mt-1 text-[0.8rem] leading-relaxed">{item.Summary}</p>
+              </div>
+              <span className="shrink-0 self-center">
+                {item.Url ? (
+                  <a
+                    href={item.Url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[0.78rem] font-medium text-signal-600 hover:underline dark:text-signal-400"
+                  >
+                    Open <ExternalLink size={12} />
+                  </a>
+                ) : (
+                  <span className="muted text-[0.74rem]">Not linked</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }

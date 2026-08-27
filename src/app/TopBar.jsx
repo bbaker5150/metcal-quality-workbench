@@ -21,7 +21,7 @@ export default function TopBar() {
         <NavButton to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Home">
           <img src={seal} alt="" width="26" height="26" className="size-[26px]" />
           <span className="hidden text-[0.82rem] font-semibold tracking-tight sm:block">
-            METCAL <span className="muted font-normal">Quality</span>
+            METCAL <span className="muted font-normal">Portal</span>
           </span>
         </NavButton>
 
