@@ -3,7 +3,6 @@ import { Send } from 'lucide-react';
 import ModulePage from '../../shared/ModulePage.jsx';
 import { moduleByRoute } from '../../app/moduleRegistry.jsx';
 import { useData } from '../../data/DataProvider.jsx';
-import { SITES } from '../../data/listSchema.js';
 import { daysOut, relative } from '../../shared/dates.js';
 import { MetricCard, AttentionList, Section } from './DashboardParts.jsx';
 
@@ -13,9 +12,7 @@ export default function TrainingDashboard() {
   const courses = new Map((data.courses || []).map((c) => [c.CourseCode, c]));
   const letters = data.annualLtr || [];
 
-  const current = letters.find((l) => l.Status === 'Signed');
-  const acknowledged = new Set((current?.AcknowledgedSites || '').split(',').map((s) => s.trim()).filter(Boolean));
-  const outstandingSites = SITES.filter((s) => !acknowledged.has(s));
+  const current = letters.find((l) => l.Status === 'Current');
 
   const unconfirmed = enrollments.filter((e) => !e.Confirmed);
   const awaitingNotice = enrollments.filter((e) => e.Confirmed && !e.InstructorNotified);
@@ -38,12 +35,6 @@ export default function TrainingDashboard() {
       label: `${e.Person} — ${e.CourseCode}`,
       detail: `Convenes ${e.StartDate}, ${relative(e.StartDate)} · ${e.QuotaStatus}`,
       to: e.Status === 'Endorsement required' ? '/wpt' : '/annual-ltr',
-    })),
-    ...outstandingSites.map((site) => ({
-      key: `ltr:${site}`, badge: 'LTR', tone: 'evaluate',
-      label: `${site} has not acknowledged ${current?.FiscalYear || 'the letter'}`,
-      detail: current?.Serial || '',
-      to: '/annual-ltr',
     })),
   ];
 
@@ -77,10 +68,10 @@ export default function TrainingDashboard() {
       <Section title="Needs somebody">
         <AttentionList
           title="Open items"
-          subtitle="Confirmations, notices, and acknowledgements still owed"
+          subtitle="Confirmations and schoolhouse notices still owed"
           icon={Send}
           items={attention}
-          empty="Every seat is confirmed, every schoolhouse notified, and every site has acknowledged the letter."
+          empty="Every seat is confirmed and every schoolhouse has been notified."
         />
       </Section>
 
@@ -88,7 +79,7 @@ export default function TrainingDashboard() {
         <div className="grid gap-4 sm:grid-cols-3">
           <MetricCard
             label="Letter in effect" value={current?.FiscalYear || '—'} tone={current ? 'neutral' : 'evaluate'}
-            detail={current ? `${acknowledged.size} of ${SITES.length} sites acknowledged` : 'No signed letter'}
+            detail={current ? current.Serial : 'No letter in effect'}
             to="/annual-ltr" action="Annual LTR"
           />
           <MetricCard

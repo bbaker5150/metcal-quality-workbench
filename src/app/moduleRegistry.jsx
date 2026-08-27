@@ -98,8 +98,8 @@ const modules = [
   },
   {
     id: 'annual-ltr', route: 'annual-ltr', category: 'Training',
-    title: 'Annual Training LTR', subtitle: 'Letter, by-name sheet, and schedule',
-    blurb: 'The letter that sets required courses and quotas, the by-name confirmation sheet it produces, and the convening schedule and schoolhouse notices that follow.',
+    title: 'Annual Training Letter', subtitle: 'Letter, by-name sheet, and schedule',
+    blurb: 'The annual scheduling letter that sets required courses and quotas, the by-name confirmation sheet it produces, and the convening schedule and schoolhouse notices that follow.',
     icon: FileSignature, accent: 'signal',
     Component: lazy(() => import('../modules/training/AnnualLtrModule.jsx')),
   },

@@ -8,13 +8,17 @@
 // of Navy training; none of that is sensitive.
 
 // ---------------------------------------------------------------------------
-// Annual Training Letter
+// Annual scheduling letters
 // ---------------------------------------------------------------------------
+// The letters are not routed through this portal — they are signed elsewhere
+// and published here to be read. So there is no approval state to model and no
+// per-site acknowledgement to chase: a letter is either the one in effect or
+// one it superseded, and what a visitor wants is the file.
 
 const annualLtr = [
-  { Id: 1, FiscalYear: 'FY26', Serial: '4355 Ser METCAL/26-014', Title: 'Annual METCAL Training Requirements and Quotas', Status: 'Signed', IssuedOn: '2025-10-07', SignedBy: 'Program Manager', Distribution: 'SDP, SDB, CPB, PRL, JFB', Summary: 'Establishes required courses by billet, quota allocation per site, and the by-name confirmation deadline.', AcknowledgedSites: 'SDP, CPB, PRL, JFB' },
-  { Id: 2, FiscalYear: 'FY27', Serial: '4355 Ser METCAL/27-002', Title: 'Annual METCAL Training Requirements and Quotas', Status: 'In routing', IssuedOn: '', SignedBy: '', Distribution: 'SDP, SDB, CPB, PRL, JFB', Summary: 'Draft in routing for signature. Quota table updated for the new microwave course.', AcknowledgedSites: '' },
-  { Id: 3, FiscalYear: 'FY25', Serial: '4355 Ser METCAL/25-011', Title: 'Annual METCAL Training Requirements and Quotas', Status: 'Superseded', IssuedOn: '2024-10-02', SignedBy: 'Program Manager', Distribution: 'SDP, SDB, CPB, PRL, JFB', Summary: 'Superseded by the FY26 letter.', AcknowledgedSites: 'SDP, SDB, CPB, PRL, JFB' },
+  { Id: 1, FiscalYear: 'FY26', Serial: '4355 Ser METCAL/26-014', Title: 'Annual NAVAIR METCAL Program Scheduling Letter', Status: 'Current', IssuedOn: '2025-10-07', FileName: 'FY26-METCAL-Scheduling-Letter.pdf', FileSize: '412 KB', Url: '', Summary: 'Establishes required courses by billet, quota allocation per site, and the convening schedule for the fiscal year.' },
+  { Id: 2, FiscalYear: 'FY25', Serial: '4355 Ser METCAL/25-011', Title: 'Annual NAVAIR METCAL Program Scheduling Letter', Status: 'Superseded', IssuedOn: '2024-10-02', FileName: 'FY25-METCAL-Scheduling-Letter.pdf', FileSize: '388 KB', Url: '', Summary: 'Superseded by the FY26 letter. Kept for reference against seats scheduled under it.' },
+  { Id: 3, FiscalYear: 'FY24', Serial: '4355 Ser METCAL/24-009', Title: 'Annual NAVAIR METCAL Program Scheduling Letter', Status: 'Superseded', IssuedOn: '2023-10-05', FileName: 'FY24-METCAL-Scheduling-Letter.pdf', FileSize: '371 KB', Url: '', Summary: 'Superseded by the FY25 letter.' },
 ];
 
 // ---------------------------------------------------------------------------

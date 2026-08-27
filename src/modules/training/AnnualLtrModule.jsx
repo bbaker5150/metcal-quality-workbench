@@ -6,7 +6,7 @@ import {
   useTrainingCounts,
 } from './panels.jsx';
 
-// The annual letter and everything it sets in motion, in one module.
+// The annual scheduling letter and everything it sets in motion, in one module.
 //
 // They were three tiles and are now three views, because they are one workflow
 // read at different depths: the letter sets the requirement and the quotas, the

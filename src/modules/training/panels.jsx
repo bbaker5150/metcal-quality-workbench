@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
-  FileSignature, CheckCircle2, CircleDashed, Printer, UserCheck,
-  CalendarDays, Send, Sparkles, AlertTriangle,
+  FileSignature, FileText, Download, CheckCircle2, CircleDashed, Printer,
+  UserCheck, CalendarDays, Send, Sparkles, AlertTriangle,
 } from 'lucide-react';
 import { Panel, PanelHeader, Badge, Button, Stat, FilterChips, EmptyState } from '../../shared/ui.jsx';
 import { Table } from '../../shared/ModulePage.jsx';
@@ -9,14 +9,14 @@ import { useData } from '../../data/DataProvider.jsx';
 import { SITES } from '../../data/listSchema.js';
 import { relative, daysOut } from '../../shared/dates.js';
 
-// The five views that make up Annual Training LTR. They are panels rather than
+// The five views that make up the Annual Training Letter. They are panels rather than
 // modules because they are one workflow read at different depths: the letter
 // sets the requirement, the by-name sheet says who is going, and the schedule
 // says when — with the same enrollment rows behind all three. Keeping one list
 // underneath is what stops a name being confirmed in one view and pending in
 // another.
 
-const LETTER_TONE = { Signed: 'pass', 'In routing': 'evaluate', Superseded: 'neutral' };
+const LETTER_TONE = { Current: 'pass', Superseded: 'neutral' };
 
 const STATUS_TONE = {
   Confirmed: 'pass',
@@ -24,72 +24,76 @@ const STATUS_TONE = {
   'Endorsement required': 'fail',
 };
 
-const splitSites = (csv) =>
-  new Set(String(csv || '').split(',').map((s) => s.trim()).filter(Boolean));
-
 // ---------------------------------------------------------------------------
 
 export function LetterPanel() {
   const { data } = useData();
   const letters = [...(data.annualLtr || [])].sort((a, b) => b.FiscalYear.localeCompare(a.FiscalYear));
-  const current = letters.find((l) => l.Status === 'Signed');
-  const acknowledged = splitSites(current?.AcknowledgedSites);
-  const outstanding = SITES.filter((s) => !acknowledged.has(s));
+  const current = letters.find((l) => l.Status === 'Current');
 
   return (
     <>
       {current && (
         <Panel className="mb-5">
-          <div className="grid divide-y divide-[var(--border-subtle)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="grid divide-y divide-[var(--border-subtle)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
             <Stat label="In effect" value={current.FiscalYear} hint={current.Serial} />
-            <Stat
-              label="Sites acknowledged"
-              value={`${acknowledged.size}/${SITES.length}`}
-              tone={outstanding.length ? 'evaluate' : 'pass'}
-              hint={outstanding.length ? `Outstanding: ${outstanding.join(', ')}` : 'All sites in'}
-            />
-            <Stat label="Issued" value={current.IssuedOn} hint={`Signed by ${current.SignedBy}`} />
+            <Stat label="Issued" value={current.IssuedOn} hint={current.Title} />
           </div>
         </Panel>
       )}
 
       <Panel>
-        <PanelHeader title="Annual training letters" subtitle="By fiscal year, newest first" icon={FileSignature} />
+        <PanelHeader
+          title="Annual scheduling letters"
+          subtitle="Published to be read — newest first"
+          icon={FileSignature}
+        />
         {letters.length === 0 ? (
           <EmptyState>No letters on file.</EmptyState>
         ) : (
           <ul className="divide-y divide-[var(--border-subtle)]">
-            {letters.map((letter) => {
-              const ack = splitSites(letter.AcknowledgedSites);
-              return (
-                <li key={letter.Id} className="px-5 py-4">
-                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h3 className="text-[0.9rem] font-semibold">{letter.FiscalYear}</h3>
+            {letters.map((letter) => (
+              <li key={letter.Id} className="flex flex-wrap items-center gap-4 px-5 py-4 transition-colors hover:bg-ink-500/[0.03]">
+                <span className="muted shrink-0"><FileText size={18} strokeWidth={1.6} /></span>
+                <div className="min-w-[16rem] flex-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <h3 className="text-[0.88rem] font-medium">
+                      {letter.FiscalYear} {letter.Title}
+                    </h3>
                     <Badge tone={LETTER_TONE[letter.Status]}>{letter.Status}</Badge>
-                    <span className="muted font-mono text-[0.74rem]">{letter.Serial}</span>
                   </div>
-                  <p className="mt-1 text-[0.85rem]">{letter.Title}</p>
                   <p className="muted mt-1 text-[0.8rem] leading-relaxed">{letter.Summary}</p>
-                  {letter.Status !== 'In routing' && (
-                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                      {SITES.map((site) => (
-                        <span
-                          key={site}
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-medium ${
-                            ack.has(site)
-                              ? 'bg-pass-600/12 text-pass-600 dark:text-pass-400'
-                              : 'bg-ink-500/10 muted'
-                          }`}
-                        >
-                          {ack.has(site) ? <CheckCircle2 size={10} /> : <CircleDashed size={10} />}
-                          {site}
-                        </span>
-                      ))}
-                    </div>
+                  <p className="muted mt-1.5 flex flex-wrap items-center gap-x-3 text-[0.74rem]">
+                    <span className="font-mono">{letter.Serial}</span>
+                    <span className="tnum">Issued {letter.IssuedOn}</span>
+                  </p>
+                </div>
+                <span className="shrink-0">
+                  {letter.Url ? (
+                    <a
+                      href={letter.Url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border hairline px-3 py-1.5 text-[0.78rem] font-medium text-signal-600 transition-colors hover:bg-ink-500/[0.06] dark:text-signal-400"
+                    >
+                      <Download size={13} /> {letter.FileName}
+                      <span className="muted font-normal">{letter.FileSize}</span>
+                    </a>
+                  ) : (
+                    // The file lives in the document library on the live site.
+                    // Shown as the control it will be rather than as a link
+                    // that resolves to nothing.
+                    <span
+                      title="Resolves to the document library on the live site"
+                      className="muted inline-flex cursor-default items-center gap-1.5 rounded-lg border border-dashed hairline px-3 py-1.5 text-[0.78rem] font-medium"
+                    >
+                      <Download size={13} /> {letter.FileName}
+                      <span className="font-normal opacity-70">{letter.FileSize}</span>
+                    </span>
                   )}
-                </li>
-              );
-            })}
+                </span>
+              </li>
+            ))}
           </ul>
         )}
       </Panel>

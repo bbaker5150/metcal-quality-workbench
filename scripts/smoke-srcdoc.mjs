@@ -72,7 +72,7 @@ check('zero failed subresource requests', failures.length === 0, failures.slice(
 check('launcher rendered', /Quality & Training Portal/.test(text));
 check('both categories and their modules listed',
   ['Quality', 'Training', 'PT Program', 'Audit Schedule', 'Scopes of Competency',
-   'Loss of Capability', 'Preventive Maintenance', 'Annual Training LTR',
+   'Loss of Capability', 'Preventive Maintenance', 'Annual Training Letter',
    'Schoolhouse Locations', 'External Training: WPT',
    'Training Resource Library'].every((t) => text.includes(t)));
 check('the parked modules are not on the launcher',
@@ -145,7 +145,7 @@ if (frame) {
     ['Scopes of Competency', /Scope of competency/],
     ['Loss of Capability', /Currently down/],
     ['Preventive Maintenance', /Maintenance schedule/],
-    ['Annual Training LTR', /Annual training letters/],
+    ['Annual Training Letter', /Annual scheduling letters/],
     ['Schoolhouse Locations', /Check-in/i],
     ['External Training: WPT', /Vendor and workplace courses/],
   ];
@@ -166,7 +166,7 @@ if (frame) {
   // three have to be reachable from inside it rather than from the launcher.
   await frame.getByRole('button', { name: /All modules/ }).click();
   await page.waitForTimeout(400);
-  await frame.getByRole('button', { name: /Annual Training LTR/ }).first().click();
+  await frame.getByRole('button', { name: /Annual Training Letter/ }).first().click();
   await page.waitForTimeout(700);
   const ltrTabs = ['By-name confirmation', 'Schedule', 'Instructor notice', 'Auto-schedule'];
   const seen = [];
@@ -178,6 +178,17 @@ if (frame) {
   check('the letter carries the by-name sheet, schedule, and notices',
     /confirmation sheet/i.test(seen[0]) && /Convening calendar/i.test(seen[1])
       && /instructor notice/i.test(seen[2]) && /Propose seats/i.test(seen[3]));
+
+  // The letters are published, not routed: no approval state, no per-site
+  // acknowledgement, just the file and when it was issued.
+  await frame.getByRole('button', { name: /^Letter$/ }).click();
+  await page.waitForTimeout(600);
+  const letterView = await frame.locator('body').innerText();
+  check('letters are offered as downloads by fiscal year',
+    /Annual NAVAIR METCAL Program Scheduling Letter/.test(letterView)
+      && /FY26-METCAL-Scheduling-Letter\.pdf/.test(letterView));
+  check('no routing or acknowledgement state is shown',
+    !/acknowledg/i.test(letterView) && !/In routing/i.test(letterView));
 
   // Travel restrictions moved inside the schoolhouse tile, since somebody
   // reading a check-in procedure is planning a trip.
