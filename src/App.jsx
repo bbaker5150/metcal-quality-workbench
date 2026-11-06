@@ -5,6 +5,7 @@ import HomeLauncher from './app/HomeLauncher.jsx';
 import modules from './app/moduleRegistry.jsx';
 import { ThemeProvider } from './shared/ThemeContext.jsx';
 import { DataProvider } from './data/DataProvider.jsx';
+import PortalAccessGate from './shared/PortalAccessGate.jsx';
 
 // MemoryRouter, not Hash or Browser routing. The built page is rendered inside
 // an <iframe srcdoc>, whose document URL is the literal string "about:srcdoc".
@@ -25,6 +26,7 @@ function ModuleFallback() {
 export default function App() {
   return (
     <ThemeProvider>
+      <PortalAccessGate>
       <DataProvider>
         <MemoryRouter>
           <div className="min-h-dvh">
@@ -43,6 +45,7 @@ export default function App() {
           </div>
         </MemoryRouter>
       </DataProvider>
+      </PortalAccessGate>
     </ThemeProvider>
   );
 }

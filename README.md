@@ -87,6 +87,16 @@ is exactly that case (z = 0.04, s = 0.044 against sigma_pt = 0.030).
 
 ## Deployment
 
+### Portal audience
+
+The deployed portal is restricted to the metsoft site's associated **Site Owners** group and **METCAL Users** (plural). Site collection administrators retain administrative access. An uncached SharePoint membership check runs before the data provider mounts. Other users receive an access-required screen; failed verification stays closed with a retry action. Local file/localhost previews remain available. SharePoint context takes precedence over local-preview hints, and mock-data configuration does not bypass access verification.
+
+The matching homepage shows only the portal for non-owner METCAL Users members; owners retain their existing readable applications. This UI policy does not create a SharePoint group or protect direct file/list URLs. Before deployment, an owner must create METCAL Users and restrict the portal page, HTML, assets, lists, and documents using [the rollout instructions](https://github.com/bbaker5150/Metrology-Software-Homepage/blob/main/METCAL-ACCESS.md). Those live steps cannot be performed by a GitHub push.
+
+The page address supplied for this deployment is `https://flankspeed.sharepoint-mil.us/sites/metsoft/SitePages/METCAL%20Quality%20&%20Training%20Portal.aspx`. The audience helper is mirrored in the homepage's embedded `portal-audience` script; update both when changing the policy.
+
+### Hosting
+
 The build target is an `<iframe srcdoc>` on a SharePoint page, which constrains
 things in ways worth knowing before changing them:
 
